@@ -3,7 +3,7 @@ FC = ifort
 #FC = gfortran
 
 #Compiler Options
-#FCFLAGS = -O0 -traceback -g -check all -r8
+FCFLAGS = -O0 -traceback -g -check -warn
 
 PROGRAMS = main
 
