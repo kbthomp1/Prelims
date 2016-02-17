@@ -104,7 +104,6 @@ close(35)
 call face_norm(rface,coord,bcface,nface,ndimn,npoin)
 call rhslap(bcface,rface,uinf,vinf,rhspo)
 
-
 !==============================================================================
 !                        IMPOSE DIRCHLET BC
 !==============================================================================
