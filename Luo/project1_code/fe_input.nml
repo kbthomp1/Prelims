@@ -1,0 +1,13 @@
+&fe_input
+  gridfile = "GRIDS/feflo.domn.cylinder.medium"
+  nnode    = 3  !number of vertices per element (triangles, quads, etc.)
+  uinf     = 1.0
+  vinf     = 0.0
+  bc_case  = "cylinder"
+  
+  nsteps   = 1000000
+
+  tec_dataname = "cylinder.dat"
+  res_dataname = "res_cylinder.dat"
+  comp_name    = "comp_cylinder.dat"
+/
