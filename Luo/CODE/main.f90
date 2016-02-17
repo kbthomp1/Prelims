@@ -1,6 +1,7 @@
 program main
 
   use gridtools, only : readgrid_lou, basis_function, face_norm
+  use solver,    only : get_lhspo
 
 implicit none
 
@@ -57,33 +58,8 @@ call basis_function(nelem,geoel,inpoel,coord)
 
 allocate(lhspo(npoin,npoin))
 
-lhspo(1:npoin,1:npoin) = 0.0
+lhspo = get_lhspo(npoin,nelem,inpoel,geoel)
  
-do ielem=1,nelem
-
-  ip1   = inpoel(1,ielem)
-  ip2   = inpoel(2,ielem)
-  ip3   = inpoel(3,ielem)
-  
-  bx(1) = geoel(1,ielem)
-  bx(2) = geoel(2,ielem)
-  bx(3) = -(bx(1)+bx(2))
-  by(1) = geoel(3,ielem)
-  by(2) = geoel(4,ielem)
-  by(3) = -(by(1)+by(2))
-
-  rjac = 0.5*geoel(5,ielem)
-
-  do i=1,nnode
-    ip = inpoel(i,ielem)
-    do j=1,nnode
-      jp = inpoel(j,ielem)
-      lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*rjac
-    end do
-  end do
-
-end do
-
 open(34,file="A_matrix",status="replace")
 open(35,file="A_matrix_diagonals",status="replace")
 

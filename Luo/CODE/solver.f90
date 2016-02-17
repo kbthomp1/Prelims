@@ -3,6 +3,8 @@ module solver
   implicit none
   private
 
+  public :: get_lhspo
+
 contains
 
 function get_lhspo(npoin,nelem,inpoel,geoel) result (lhspo)

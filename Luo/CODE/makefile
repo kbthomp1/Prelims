@@ -18,7 +18,6 @@ $(PROGRAMS): $(OBJS)
 
 $(OBJS): $(SRCS)
 
-
 # ======================================================================
 # And now the general rules, these should not require modification
 # ======================================================================
@@ -47,6 +46,6 @@ clean:
 veryclean: clean
 	rm -f *~ $(PROGRAMS)
 
-echo_all:
-	echo $(SRCS)
-	echo $(OBJS)
+depend:
+	./Depend.pl $(SRCS)
+
