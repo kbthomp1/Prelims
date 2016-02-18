@@ -11,15 +11,43 @@ module io_helpers
 
 contains
 
+!============================ READ_NAMELIST ==================================80
+! Set default and override with user-specified namelist options
+!=============================================================================80
+
   subroutine read_namelist
 
-    use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, 
-                              nsteps, tec_dataname, lin_solver
+    use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps, &
+                              tec_dataname, lin_solver, tolerance
 
-    namelist /fe_input/ gridfile, nnode, uinf, vinf, bc_case, nsteps,          &
-                        tec_dataname, lin_solver
+    namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
+                        lin_solver, tolerance
 
   continue
+
+    !Grid filename
+    gridfile = "gridfile"
+
+    !Number of verticies per element (triangles, quads, etc.)
+    nnode = 3
+
+    !X-direction freestream velocity
+    uinf = 1.0_dp
+
+    !Y-direction freestream velocity
+    vinf = 0.0_dp
+
+    !Number of iterations
+    nsteps = 1
+
+    !Tecplot output filename
+    tec_dataname = "output.dat"
+
+    !Linear solver selection
+    lin_solver = "gauss seidel"
+
+    !Tolerance criterion of residual to exit linear solve
+    tolerance = 1.E-20_dp
 
     open(11,file="fe_input.nml",status="old")
     read(11,nml=fe_input)

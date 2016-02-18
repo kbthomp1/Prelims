@@ -5,33 +5,21 @@ program main
   use solver,        only : get_lhspo, get_rhspo, set_bc, get_soln, solve
   use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist
   use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps,   &
-                            tec_dataname, lin_solver
-
+                            tec_dataname, lin_solver, tolerance
   implicit none
   
-  integer      :: ndimn, ntype, nelem, npoin, nface, nsteps, nnode
-  
-  real(dp)      :: uinf, vinf, tolerance
+  integer :: ndimn, ntype, nelem, npoin, nface
   
   real(dp), dimension(:),   allocatable :: rhspo, phi
   real(dp), dimension(:),   allocatable :: Vx, Vy, Vt
   
   real(dp), dimension(:,:), allocatable :: coord, geoel, lhspo, rface
   
-  integer, dimension(:,:), allocatable :: inpoel, bcface
-  
-  character(len=100) :: gridfile, bc_case, tec_dataname, lin_solver
-  namelist /fe_input/ gridfile, nnode, uinf, vinf, bc_case, nsteps,           &
-                      tec_dataname, lin_solver
+  integer, dimension(:,:),  allocatable :: inpoel, bcface
 
 continue
 
   call read_namelist
-
-! Read the namelist
-  open(11,file="fe_input.nml",status="old")
-  read(11,nml=fe_input)
-  close(11)
   
 ! Read the grid
   call readgrid_lou(ndimn,ntype,nelem,npoin,nface,nnode,inpoel,gridfile,       &
@@ -57,7 +45,6 @@ continue
    
   call set_bc(phi,lhspo,rhspo,npoin,bcface)
   
-  tolerance = 1.E-1_dp
   call solve(lin_solver,lhspo,rhspo,phi,npoin,nsteps,tolerance)
   
   call get_soln(Vx,Vy,Vt,phi,geoel,inpoel,npoin,nelem)

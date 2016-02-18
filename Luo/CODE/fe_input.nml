@@ -3,9 +3,9 @@
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
   uinf     = 1.0
   vinf     = 0.0
-  bc_case  = "channel"
   
-  nsteps   = 1000000
+  nsteps    = 1000000
+  tolerance = 0.1
 
   tec_dataname = "channel.dat"
 /
