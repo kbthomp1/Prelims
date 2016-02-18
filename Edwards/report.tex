@@ -1,0 +1,126 @@
+%        File: report.tex
+%     Created: Thu Feb 18 01:00 PM 2016 E
+% Last Change: Thu Feb 18 01:00 PM 2016 E
+%
+\documentclass[a4paper]{report}
+
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{newlfont}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{titlesec}
+
+\newcommand{\eref}[1]{Eq.~(\ref{#1})}
+\newcommand{\erefs}[1]{Eq.s~(\ref{#1})}
+\newcommand{\sk}{\dot{s}_k}
+\newcommand{\skg}[1]{{\dot{s}_{#1}}^{(g)}}
+\newcommand{\sks}[1]{{\dot{s}_{#1}}^{(s)}}
+\newcommand{\kf}[1]{k_{f,#1}}
+\newcommand{\kcf}[1]{\frac{k_{f,#1}}{k_{c,#1}}}
+\newcommand{\cg}[1]{C_{#1}^{(g)}}
+\newcommand{\cs}[1]{C_{#1}^{(s)}}
+
+
+\title{MAE 770 Written Preliminary Exam \#1}
+
+\author{ Kyle B. Thompson }
+
+\begin{document}
+\maketitle
+\begin{enumerate}
+  \item The units can be determined from the left hand side of the equation
+    \begin{equation}
+      \rho D_k \frac{\partial Y_k^{(g)}}{\partial x_j} \cdot \hat{n}_j = M_k \sk
+      \label{bc posed}
+    \end{equation}
+  Using the following nomenclature:
+  \begin{tabbing}
+    XXXXXXXXX \= \kill% this line sets tab stop
+    $m$ \> mass \\
+    $N$ \> number of molecules \\
+    $l$ \> length \\
+    $t$ \> time
+  \end{tabbing}
+  The units of the variables on the left hand side of \ref{bc posed} are
+  \begin{align*}
+    \rho &= \frac{m}{l^3} \\
+    D_k &= \frac{l^2}{t} \\
+    x_j &= l
+  \end{align*}
+  The mass fraction, $Y_k^{(g)}$, is unitless, as well as the unit normal vector,
+  $\hat{n}_j$. Since the unit of molecular weight are, $M_k = m/N$, we can
+  rearrange \eref{bc posed} and solve for the units of $\sk$
+  \begin{equation}
+    \label{units sdot}
+    \begin{aligned}
+      \sk &= \frac{\rho D_k}{M_k}\frac{\partial Y_k^{(g)}}{\partial x_j}\cdot \hat{n}_j \\
+      &= \frac{m}{l^3} \frac{N}{m} \frac{l^2}{t}\frac{1}{l} \\
+      &= \frac{N}{l^2 t}
+    \end{aligned}
+  \end{equation}
+  Expressing surface coverage, $\Theta_i$, as the fraction of sites occupied by
+  species $i$ implies that it is unitless.  Since the concentration of
+  surface-absorbed species, $C_k$, has units $N/l^2$, and must be equivalent to
+  the product of surface coverage and surface site density, $\Gamma$, the units
+  of surface site density must be $N/l^2$.  Thus, the units for $\sk$ and
+  $\Gamma$, expressed in the same basis as the problem was posed, are
+  \[
+    \boxed{\sk = \frac{moles}{area^2-sec}}
+  \]
+  \[
+    \boxed{\Gamma = \frac{moles}{area^2}}
+  \]
+
+\item
+  The formulation of the source terms $\sk$ for $k=$ gas species and $k=$
+  surface species can be expressed as
+  \begin{equation}
+    \label{sdot form}
+    \begin{gathered}
+      \sk = \sum_{r=1}^{N_r}\left[(\nu_{k,r}^{''} - \nu_{k,r}^{'})
+      (R_{f,r} - R_{b,r})\right] \\
+      R_{f,r} = k_{f,r}\prod_{i=1}^{N_k}(C_i^{\nu_{i,r}^{'}}), \quad
+      R_{b,r} = k_{b,r}\prod_{i=1}^{N_k}(C_i^{\nu_{i,r}^{''}})
+    \end{gathered}
+  \end{equation}
+  where $\nu_{k,r}^{'}$ is the stoichometric coefficient for species $k$ in
+  reaction $r$ as a reactant in the forward reaction, and $\nu_{k,r}^{''}$ is
+  for that species as a product in the forward reaction.  $N_k$ denotes the
+  number of species and $N_r$ denotes the number of reactions.  Additionally,
+  the backward rate coefficient $k_{b,r}$ can be determined from the forward
+  rate coefficient $k_{f,r}$ and the equilibrium constant $K_{c,r}$.  This is much
+  better, since the law of mass action enables the determination of $K_{c,r}$ as
+  a function of species concentrations, resulting in $\sk =
+  \sk(k_{f,r},C_1,\dots,C_{N_k})$. Thus, using \eref{sdot form} the $\sk$ source
+  terms can be expressed as
+  \begin{align}
+    \skg{H_2}  &= -\left( \kf{1} \cg{H_2} - \kcf{1} \cs{H} \right) \\
+    \skg{O_2}  &= -\left( \kf{2} \cg{O_2} - \kcf{2} \cs{O} \right) \\
+    \skg{H_2O} &= \kf{6} \cs{H_2O} - \kcf{6} \cg{H_2O} \\
+    \begin{split}
+      \sks{H}    &= 2 \left( \kf{1} \cg{H_2} - \kcf{1} {\cs{H}}^2 \right) \\
+      &-\left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{OH} \right) \\
+      &-\left( \kf{4} \cs{H} \cs{OH} - \kcf{4} \cs{H_2O} \right)
+    \end{split} \\
+    \begin{split}
+      \sks{O} &= 2 \left( \kf{2} \cg{O_2} - \kcf{2} {\cs{O}}^2 \right) \\
+      &-\left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{OH} \right) \\
+      &+\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right)
+    \end{split} \\
+    \begin{split}
+      \sks{OH} &= 2 \left( \kf{3} \cs{OH} - \kcf{3} \cs{H} \cs{O} \right) \\
+      &-\left( \kf{4} \cs{H} \cs{OH} - \kcf{4} \cs{H_2O} \right) \\
+      &-2\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right)
+    \end{split} \\
+    \begin{split}
+      \sks{H_2O} &= \left( \kf{4} \cs{H} \cs{OH} - \kcf{4} \cs{H_2O} \right) \\
+      &+\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right) \\
+      &-\left( \kf{6} \cs{H_2O} - \kcf{6} \cg{H_2O} \right)
+    \end{split}
+    \label{source terms}
+  \end{align}
+  
+\end{enumerate}
+\end{document}
