@@ -2,7 +2,7 @@ program main
 
   use kinddefs,  only : dp
   use gridtools, only : readgrid_lou, basis_function, face_norm
-  use solver,    only : get_lhspo, set_bc
+  use solver,    only : get_lhspo, set_bc, get_soln
 
 implicit none
 
@@ -70,66 +70,18 @@ call set_bc(phi,lhspo,rhspo,npoin,bcface)
 !call conjgrad(lhspo,rhspo,phi,npoin,nsteps)
 !call pjac(lhspo,rhspo,phi,npoin,nsteps,res_dataname)
 
-tolerance = 1.E-5_dp
+tolerance = 1.E-1_dp
 call GSM(lhspo,rhspo,phi,npoin,tolerance)
 
 !do i=1,npoin
 !  write(*,*) phi(i)
 !end do
 
-!==============================================================================
-!                      CALCULATE VELOCITIES
-!==============================================================================
-
-allocate(Vx_local(nelem))
-allocate(Vy_local(nelem))
-allocate(Vxarea(npoin))
-allocate(Vyarea(npoin))
-allocate(area(npoin))
 allocate(Vx(npoin))
 allocate(Vy(npoin))
 allocate(Vt(npoin))
 
-Vx_local(1:nelem) = 0.0
-Vy_local(1:nelem) = 0.0
-Vxarea(1:npoin)   = 0.0
-Vyarea(1:npoin)   = 0.0
-area(1:npoin)     = 0.0
-
-do ielem=1,nelem
-
-  ip1=inpoel(1,ielem)
-  ip2=inpoel(2,ielem)
-  ip3=inpoel(3,ielem)
-
-  Vx_local(ielem) = (geoel(1,ielem)*(phi(ip1)-phi(ip3))       &
-                   + geoel(2,ielem)*(phi(ip2)-phi(ip3)))*geoel(5,ielem) 
-
-  Vy_local(ielem) = (geoel(3,ielem)*(phi(ip1)-phi(ip3))       &
-                   + geoel(4,ielem)*(phi(ip2)-phi(ip3)))*geoel(5,ielem) 
-
-  Vxarea(ip1) = Vxarea(ip1)+Vx_local(ielem)
-  Vxarea(ip2) = Vxarea(ip2)+Vx_local(ielem)
-  Vxarea(ip3) = Vxarea(ip3)+Vx_local(ielem)
-
-  Vyarea(ip1) = Vyarea(ip1)+Vy_local(ielem)
-  Vyarea(ip2) = Vyarea(ip2)+Vy_local(ielem)
-  Vyarea(ip3) = Vyarea(ip3)+Vy_local(ielem)
-  
-  area(ip1)  = area(ip1)+geoel(5,ielem)
-  area(ip2)  = area(ip2)+geoel(5,ielem)
-  area(ip3)  = area(ip3)+geoel(5,ielem)
-
-end do
-
-do ipoin=1,npoin
-  
-  Vx(ipoin) = Vxarea(ipoin)/area(ipoin)
-  Vy(ipoin) = Vyarea(ipoin)/area(ipoin)
-
-  Vt(ipoin) = sqrt(Vx(ipoin)**2 + Vy(ipoin)**2)
-
-end do
+call get_soln(Vx,Vy,Vt,phi,geoel,inpoel,npoin,nelem)
 
 !==============================================================================
 !                        TECPLOT OUTPUT
