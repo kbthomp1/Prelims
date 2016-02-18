@@ -11,10 +11,10 @@ implicit none
 !==============================================================================
 
 integer      :: ndimn,ntype,nelem,npoin,nface,nsteps
-integer      :: i,j,nnode,ielem,ipoin,ib
+integer      :: i,j,nnode,ielem,ipoin
 integer      :: ip1,ip2,ip3
 
-real(dp)      :: uinf,vinf,phi_ib,v_dummy
+real(dp)      :: uinf,vinf,tolerance
 
 real(dp), dimension(:),   allocatable :: rhspo,phi,Vx_local,Vy_local,Vxarea
 real(dp), dimension(:),   allocatable :: Vyarea,area,Vx,Vy
@@ -51,10 +51,6 @@ call readgrid_lou(ndimn,ntype,nelem,npoin,nface,nnode,inpoel,         &
 ! assemble geometry related matricies
 call basis_function(nelem,geoel,inpoel,coord)
 
-!=============================================================================
-!                         GLOBAL STIFFNESS MATRIX
-!=============================================================================
-
 allocate(lhspo(npoin,npoin))
 
 lhspo = get_lhspo(npoin,nelem,nnode,inpoel,geoel)
@@ -73,7 +69,9 @@ call set_bc(phi,lhspo,rhspo,npoin,bcface)
 
 !call conjgrad(lhspo,rhspo,phi,npoin,nsteps)
 !call pjac(lhspo,rhspo,phi,npoin,nsteps,res_dataname)
-call GSM(lhspo,rhspo,phi,npoin,1.0e-05)
+
+tolerance = 1.E-5_dp
+call GSM(lhspo,rhspo,phi,npoin,tolerance)
 
 !do i=1,npoin
 !  write(*,*) phi(i)
@@ -347,47 +345,16 @@ close(33)
 
 end subroutine
 
-!========================SOR SOLVER==========================================
-!subroutine SOR(A,b,x,jmax,nsteps)
-!
-!real(dp)                       :: eps,pi,anorm,anormb,omega
-!real(dp), dimension(jmax)      :: b,x
-!real(dp), dimension(jmax,jmax) :: A
-!
-!integer i,j,n,nsteps
-!
-!pi     = 4.D0*DATAN(1.D0)
-!anormb = 0.0
-!
-!rjac   = 1-pi**2/(2*jmax**2)
-!
-!do i=2,jmax-1
-!  do j=2,jmax-1
-!    anormb=anormb+abs(b(i,j))
-!  end do
-!end do
-!
-!omega = 1.0
-!
-!do n=1,nsteps
-!  anorm=0.0
-!  do i=2,jmax-1
-!    do j=2,jmax-1
-!      if(mod(i+j,2) == mod(n,2)) then
-!        resid(A
-
 !========================GAUSS SEIDEL SOLVER=================================
       SUBROUTINE GSM(A1,B1,X01,N,TOL)
 
       IMPLICIT NONE
 
-      REAL(dp)::A1(N,N),B1(N),X01(N),X(N),AX(N),r(N),NORM0,NORM,SUM1,SUM2
-      REAL   ::TOL
-      INTEGER::K=1,N,i,j
-
-      OPEN(2,file="GSM.dat",status="replace")
-
-      WRITE (2,*)'RESULT FOR GAUSS-SEIDEL METHOD'
+      REAL(dp) :: A1(N,N),B1(N),X01(N)
+      REAL(dp) :: X(N),AX(N),r(N)
+      REAL(dp) :: NORM0,NORM,SUM1,SUM2
+      REAL(dp) :: TOL
+      INTEGER :: K=1,N,i,j
 
   11  DO I=1,N
         SUM1=0.0
@@ -398,9 +365,6 @@ end subroutine
           END DO
         X(I)=(B1(I)-SUM1-SUM2)/A1(I,I)
       END DO
-
-      WRITE (2,20)K,(X(I),I=1,N)
-  20  FORMAT(2X,I3,3(2X,F9.6))
 
       NORM    = 0.0 
       ax(1:N) = 0.0

@@ -10,6 +10,10 @@ module solver
 
 contains
 
+!================================ GET_LHSPO =================================80
+! Form the global stiffness matrix
+!============================================================================80
+
   function get_lhspo(npoin,nelem,nnode,inpoel,geoel) result (lhspo)
   
     integer, intent(in) :: npoin, nelem, nnode
@@ -57,7 +61,7 @@ contains
   end function get_lhspo
   
 !=========================== SET_BC =========================================80
-!                        IMPOSE DIRCHLET BC
+! Set the Dirchlet boundary condition
 !============================================================================80
   subroutine set_bc(phi,lhspo,rhspo,npoin,bcface)
  
