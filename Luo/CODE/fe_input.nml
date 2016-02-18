@@ -4,7 +4,7 @@
   uinf     = 1.0
   vinf     = 0.0
   
-  nsteps    = 1000000
+  nsteps    = 500
   tolerance = 0.1
 
   tec_dataname = "channel.dat"

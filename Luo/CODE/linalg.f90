@@ -122,57 +122,63 @@ contains
 !============================== GAUSS_SEIDEL ================================80
 ! Solve the linear system via the gauss seidel method
 !============================================================================80
-        SUBROUTINE gauss_seidel(A1,B1,X01,N,TOL)
+  subroutine gauss_seidel(A1,b1,x01,n,nsteps,tol)
   
-        IMPLICIT NONE
+    real(dp) :: A1(n,n),b1(n),x01(n)
+    real(dp) :: x(n),Ax(n),r(n)
+    real(dp) :: norm0,norm,sum1,sum2
+    real(dp) :: tol
+
+    integer  :: k,n,i,j,nsteps,istep
+
+  continue
+
+    k = 0
+
+    write(*,"(A,4x,A)") " Iteration","L2_norm"
+
+    outer_loop: do istep = 1,nsteps
+        do i=1,n
+          sum1=0.0
+          sum2=0.0
+            do j=1,n
+              if (j.LT.i) sum1=sum1+A1(i,j)*x(j)
+              if (j.GT.i) sum2=sum2+A1(i,j)*x01(j)
+            end do
+          x(i)=(b1(i)-sum1-sum2)/A1(i,i)
+        end do
   
-        REAL(dp) :: A1(N,N),B1(N),X01(N)
-        REAL(dp) :: X(N),AX(N),r(N)
-        REAL(dp) :: NORM0,NORM,SUM1,SUM2
-        REAL(dp) :: TOL
-        INTEGER :: K=1,N,i,j
+        norm    = 0.0 
+        ax(1:n) = 0.0
   
-    11  DO I=1,N
-          SUM1=0.0
-          SUM2=0.0
-            DO J=1,N
-              IF (J.LT.I) SUM1=SUM1+A1(I,J)*X(J)
-              IF (J.GT.I) SUM2=SUM2+A1(I,J)*X01(J)
-            END DO
-          X(I)=(B1(I)-SUM1-SUM2)/A1(I,I)
-        END DO
-  
-        NORM    = 0.0 
-        ax(1:N) = 0.0
-  
-        DO i=1,N
-          DO j=1,N   
-            ax(i)=ax(i)+A1(i,j)*X(j)
+        do i=1,n
+          do j=1,n   
+            ax(i)=ax(i)+A1(i,j)*x(j)
           end do
     
-          r(i)    = B1(i)-ax(i)
-          NORM = NORM + r(i)*r(i)
-        END DO
+          r(i)    = b1(i)-ax(i)
+          norm = norm + r(i)*r(i)
+        end do
   
-        IF(K==1) NORM0=sqrt(NORM)
+        if(k==0) norm0=sqrt(norm)
         
-        K=K+1
+        k=k+1
   
-        NORM=sqrt(NORM)/NORM0
+        norm=sqrt(norm)/norm0
   
-        write(*,*) K,NORM
+        write(*,"(i6,6x,e11.5)") k,norm
   
-        IF (NORM.LT.TOL) then
+        if (norm.LT.tol) then
           write(*,*) 'The solution has converged at, ',k,'iterations'
-          GO TO 12
-        END IF
+          exit
+        end if
   
-        DO I=1,N
-          X01(I)=X(I)
-        END DO
+        do i=1,n
+          x01(i)=x(i)
+        end do
+
+      end do outer_loop
   
-        GO TO 11
-  
-     12 END SUBROUTINE
+    end subroutine gauss_seidel
 
 end module linalg

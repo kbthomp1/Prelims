@@ -222,7 +222,7 @@ contains
     case("point jacobi")
       call jacobi(lhspo,rhspo,phi,npoin,nsteps)
     case("gauss seidel")
-      call gauss_seidel(lhspo,rhspo,phi,npoin,tolerance)
+      call gauss_seidel(lhspo,rhspo,phi,npoin,nsteps,tolerance)
     case default
       write(*,*) "Error: linear solver specified not available:",lin_solver
       stop 1
