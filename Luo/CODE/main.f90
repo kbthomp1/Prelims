@@ -2,7 +2,7 @@ program main
 
   use kinddefs,  only : dp
   use gridtools, only : readgrid_lou, basis_function, face_norm
-  use solver,    only : get_lhspo
+  use solver,    only : get_lhspo, set_bc
 
 implicit none
 
@@ -59,50 +59,13 @@ allocate(lhspo(npoin,npoin))
 
 lhspo = get_lhspo(npoin,nelem,nnode,inpoel,geoel)
  
-open(34,file="A_matrix",status="replace")
-open(35,file="A_matrix_diagonals",status="replace")
-
-do j=1,npoin
-  write(34,*) (lhspo(i,j),i=1,npoin)
-  write(35,*) lhspo(j,j)
-end do
-
-close(34)
-close(35)
-
 ! Formulate the load vector
 call face_norm(rface,coord,bcface,nface,ndimn,npoin)
 call rhslap(bcface,rface,uinf,vinf,rhspo)
 
-!==============================================================================
-!                        IMPOSE DIRCHLET BC
-!==============================================================================
-
 allocate(phi(npoin))
-
-phi(1:npoin) = 0.0
-
-select case(bc_case)
-
-  case("channel")
-    ib = bcface(1,1)
-    phi_ib = 1.0
-
-    lhspo(ib,ib) = lhspo(ib,ib)*1.0e+20
-    rhspo(ib)   = lhspo(ib,ib)*phi_ib
   
-  case("cylinder")
-    call cylpot(coord,npoin,phi_ib,v_dummy,bcface(1,1)) 
-
-    ib = bcface(1,1)
-
-    lhspo(ib,ib) = lhspo(ib,ib)*1.0e+20
-    rhspo(ib)   = lhspo(ib,ib)*phi_ib
-
-  case default
-    write(*,*) "ERROR - No Case Selected!"
-
-end select
+call set_bc(phi,lhspo,rhspo,npoin,bcface)
 
 !==============================================================================
 !                         SOLVE MATRIX
@@ -273,21 +236,6 @@ do iface=1,nface
 end do
 
 return
-end subroutine
-
-!======================CYLINDER POTENTIAL CALCULATION===========================
-subroutine cylpot(coord,npoin,phi_ib,v_ib,ibpoin)
-
-integer ibpoin,npoin
-real(dp) coord(ndimn,npoin),phi_ib,v_ib,x,y
-
-x=coord(1,ibpoin)
-y=coord(2,ibpoin)
-
-phi_ib = (1+(0.5)**2/(x**2+y**2))*x
-
-v_ib   = sqrt(1+2*0.5**2/(x**2+y**2)*(2*y**2/(x**2+y**2)-1)+0.5**4/(x**2+y**2)**2)
-
 end subroutine
 
 !======================CONJUGATE GRADIENT SOLVER=================================
