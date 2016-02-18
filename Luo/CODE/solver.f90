@@ -139,12 +139,12 @@ contains
 
   subroutine get_soln(Vx,Vy,Vt,phi,geoel,inpoel,npoin,nelem)
 
-    integer,                     intent(in) :: npoin,nelem
-    integer, dimension(3,npoin), intent(in) :: inpoel
+    integer,                  intent(in) :: npoin,nelem
+    integer, dimension(:,:),  intent(in) :: inpoel
 
-    real(dp), dimension(5,nelem), intent(in)  :: geoel
-    real(dp), dimension(npoin),   intent(in)  :: phi
-    real(dp), dimension(npoin),   intent(out) :: Vx, Vy, Vt
+    real(dp), dimension(:,:), intent(in)  :: geoel
+    real(dp), dimension(:),   intent(in)  :: phi
+    real(dp), dimension(:),   intent(out) :: Vx, Vy, Vt
 
     real(dp), dimension(nelem) :: Vx_local, Vy_local
     real(dp), dimension(npoin) :: Vxarea, Vyarea, area

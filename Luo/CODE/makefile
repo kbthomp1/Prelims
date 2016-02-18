@@ -1,9 +1,10 @@
 #Fortran Compiler
-#FC = ifort
-FC = gfortran -Wall
+FC = ifort
+#FC = gfortran -Wall
 
 #Compiler Options
 #FCFLAGS = -O0 -traceback -g -check -warn
+FCFLAGS = -O2
 
 PROGRAMS = main
 

@@ -94,9 +94,9 @@ contains
 !============================ WRITE_TEC_SURFACE =============================80
 ! Write tecplot .dat files with solution in point format for surface(s)
 !============================================================================80
-  subroutine write_tec_surface(npoin,bcface,coord,Vt)
+  subroutine write_tec_surface(nface,bcface,coord,Vt)
 
-    integer,                 intent(in) :: npoin
+    integer,                 intent(in) :: nface
     integer, dimension(:,:), intent(in) :: bcface
 
     real(dp), dimension(:),   intent(in) :: Vt
@@ -114,7 +114,7 @@ contains
     write(16,*) 'TITLE = "Lower Surface"'
     write(16,*) 'VARIABLES = "X" "Y" "Vt"'
 
-    do i=1,npoin
+    do i=1,nface
       if(bcface(3,i)==2) then
         ip1=bcface(1,i)
         ip2=bcface(2,i)
@@ -126,7 +126,7 @@ contains
       end if
     end do
     
-    do i=1,npoin
+    do i=1,nface
       if(bcface(3,i)==2) then
         ip1=bcface(1,i)
         ip2=bcface(2,i)

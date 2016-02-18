@@ -50,6 +50,6 @@ continue
   call get_soln(Vx,Vy,Vt,phi,geoel,inpoel,npoin,nelem)
   
   call write_tec_volume(tec_dataname,npoin,nelem,coord,inpoel,phi,Vx,Vy,Vt)
-  call write_tec_surface(npoin,bcface,coord,Vt)
+  call write_tec_surface(nface,bcface,coord,Vt)
 
 end program main
