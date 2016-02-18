@@ -1,5 +1,7 @@
 module gridtools
 
+  use kinddefs, only : dp
+
   implicit none
   private
 
@@ -16,7 +18,7 @@ contains
   integer      :: titleline,ndimn,ntype,nelem,npoin,nface,nvertices
   integer      :: i,j,elem_dummy,poin_dummy,face_dummy
   
-  real(8), dimension(:,:),allocatable  :: coord
+  real(dp), dimension(:,:),allocatable  :: coord
   
   integer, dimension(:,:), allocatable :: inpoel,bcface
   
@@ -62,12 +64,12 @@ contains
 !========================GEOMETRY FACES=========================================
   subroutine basis_function(nelem,geoel,inpoel,coord)
   
-  integer    :: i,j,ielem,nelem,ip1,ip2,ip3
+  integer    :: ielem,nelem,ip1,ip2,ip3
   
-  real(8)    :: D,dd
+  real(dp)    :: D,dd
   
-  real(8), dimension(:),   allocatable :: a,b
-  real(8), dimension(:,:), allocatable :: geoel,coord
+  real(dp), dimension(:),   allocatable :: a,b
+  real(dp), dimension(:,:), allocatable :: geoel,coord
   
   integer, dimension(:,:), allocatable :: inpoel
   
@@ -110,9 +112,9 @@ contains
   
   subroutine face_norm(rface,coord,bcface,nface,ndimn,npoin)
   
-  real(8)  x1,x2,y1,y2,coord(ndimn,npoin)
+  real(dp)  x1,x2,y1,y2,coord(ndimn,npoin)
   
-  real(8), dimension(:,:), allocatable :: rface
+  real(dp), dimension(:,:), allocatable :: rface
   
   integer  bcface(ndimn+1,nface),ip1,ip2,iface,ndimn,npoin,nface
   

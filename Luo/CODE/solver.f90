@@ -1,5 +1,7 @@
 module solver
 
+  use kinddefs, only : dp
+
   implicit none
   private
 
@@ -7,16 +9,20 @@ module solver
 
 contains
 
-function get_lhspo(npoin,nelem,inpoel,geoel) result (lhspo)
+function get_lhspo(npoin,nelem,nnode,inpoel,geoel) result (lhspo)
 
-  integer, intent(in) :: npoin, nelem
+  integer, intent(in) :: npoin, nelem, nnode
   integer,  dimension(:,:), intent(in) :: inpoel
   real(dp), dimension(:,:), intent(in) :: geoel
 
-  real(dp), dimension(npoin,npoin), intent(out) :: lhspo
+  real(dp), dimension(npoin,npoin) :: lhspo
+
+  real(dp), dimension(3) :: bx, by
+
+  real(dp) :: rjac
 
   integer :: ielem, ip1, ip2,ip3
-  integer :: 
+  integer :: i, ip, j, jp
 
 continue
 

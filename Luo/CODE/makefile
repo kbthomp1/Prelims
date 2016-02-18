@@ -1,9 +1,9 @@
 #Fortran Compiler
-FC = ifort
-#FC = gfortran
+#FC = ifort
+FC = gfortran -Wall
 
 #Compiler Options
-FCFLAGS = -O0 -traceback -g -check -warn
+#FCFLAGS = -O0 -traceback -g -check -warn
 
 PROGRAMS = main
 
@@ -11,41 +11,38 @@ all: $(PROGRAMS)
 
 SRCS = $(wildcard *90)
 f90s = $(SRCS:.F90=.f90)
+deps = $(f90s:.f90=.d)
 OBJS = $(f90s:.f90=.o)
 
 $(PROGRAMS): $(OBJS)
 	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS)
 
-$(OBJS): $(SRCS)
+#$(OBJS): $(SRCS)
 
-# ======================================================================
-# And now the general rules, these should not require modification
-# ======================================================================
+-include $(deps)
 
-# General rule for building prog from prog.o; $^ (GNU extension) is
-# used in order to list additional object files on which the
-# executable depends
 %: %.o
 	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS)
 
-# General rules for building prog.o from prog.f90 or prog.F90; $< is
-# used in order to list only the first prerequisite (the source file)
-# and not the additional prerequisites such as module or include files
-%.o: %.f90
+%.o %.mod: %.f90
 	$(FC) $(FCFLAGS) -c $<
 
-%.o: %.F90
+%.o %.mod: %.F90
 	$(FC) $(FCFLAGS) -c $<
+
+# Auto dependency generation
+
+%.d: %.f90
+	./Depend.pl $< . > $@
+
+%.d: %.F90
+	./Depend.pl $< . > $@
 
 # Utility targets
 .PHONY: clean veryclean
 
 clean:
-	rm -f *.o *.mod *.MOD
+	rm -f *.o *.mod *.MOD *.d
 
 veryclean: clean
 	rm -f *~ $(PROGRAMS)
-
-depend:
-	./Depend.pl $(SRCS)
-

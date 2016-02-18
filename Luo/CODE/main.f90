@@ -1,5 +1,6 @@
 program main
 
+  use kinddefs,  only : dp
   use gridtools, only : readgrid_lou, basis_function, face_norm
   use solver,    only : get_lhspo
 
@@ -9,19 +10,17 @@ implicit none
 !                        VARIABLE DECLARATIONS
 !==============================================================================
 
-integer      :: titleline,ndimn,ntype,nelem,npoin,nface,nsteps
-integer      :: i,j,ip,jp,nnode,ielem,ipoin,poin_dummy,ib
+integer      :: ndimn,ntype,nelem,npoin,nface,nsteps
+integer      :: i,j,nnode,ielem,ipoin,ib
 integer      :: ip1,ip2,ip3
 
-real(8)      :: rjac,uinf,vinf,phi_ib,L2,L2_v,v_dummy,avg_mesh
+real(dp)      :: uinf,vinf,phi_ib,v_dummy
 
-real(8), dimension(3) :: bx,by
+real(dp), dimension(:),   allocatable :: rhspo,phi,Vx_local,Vy_local,Vxarea
+real(dp), dimension(:),   allocatable :: Vyarea,area,Vx,Vy
+real(dp), dimension(:),   allocatable :: Vt
 
-real(8), dimension(:),   allocatable :: rhspo,phi,Vx_local,Vy_local,Vxarea
-real(8), dimension(:),   allocatable :: Vyarea,area,Vx,Vy,phi_exact,phidiff
-real(8), dimension(:),   allocatable :: Vt,V_exact,v_diff
-
-real(8), dimension(:,:), allocatable :: coord,geoel,lhspo,rface
+real(dp), dimension(:,:), allocatable :: coord,geoel,lhspo,rface
 
 integer, dimension(:,:), allocatable :: inpoel,bcface
 
@@ -58,7 +57,7 @@ call basis_function(nelem,geoel,inpoel,coord)
 
 allocate(lhspo(npoin,npoin))
 
-lhspo = get_lhspo(npoin,nelem,inpoel,geoel)
+lhspo = get_lhspo(npoin,nelem,nnode,inpoel,geoel)
  
 open(34,file="A_matrix",status="replace")
 open(35,file="A_matrix_diagonals",status="replace")
@@ -243,10 +242,10 @@ contains
 subroutine rhslap(bcface,rface,uinf,vinf,rhspo)
 
 integer  bcface(ndimn+1,nface),iface,ip1,ip2
-real(8)  rface(ndimn,nface),uinf,vinf
-real(8)  cface
+real(dp)  rface(ndimn,nface),uinf,vinf
+real(dp)  cface
 
-real(8), dimension(:), allocatable :: rhspo
+real(dp), dimension(:), allocatable :: rhspo
 
 allocate(rhspo(npoin))
 
@@ -280,7 +279,7 @@ end subroutine
 subroutine cylpot(coord,npoin,phi_ib,v_ib,ibpoin)
 
 integer ibpoin,npoin
-real(8) coord(ndimn,npoin),phi_ib,v_ib,x,y
+real(dp) coord(ndimn,npoin),phi_ib,v_ib,x,y
 
 x=coord(1,ibpoin)
 y=coord(2,ibpoin)
@@ -294,8 +293,8 @@ end subroutine
 !======================CONJUGATE GRADIENT SOLVER=================================
 subroutine conjgrad(A,b,x,npoin,nsteps)
 
-real(8)                   :: A(npoin,npoin),rsold,rsnew,alpha,pAp
-real(8), dimension(npoin) :: b,x,ax,r,p,Ap
+real(dp)                   :: A(npoin,npoin),rsold,rsnew,alpha,pAp
+real(dp), dimension(npoin) :: b,x,ax,r,p,Ap
 
 integer                   :: npoin,nsteps,n
 
@@ -350,8 +349,8 @@ end subroutine
 
 subroutine pjac(A,b,x,npoin,nsteps,res_dataname)
 
-real(8)                   :: A(npoin,npoin),resnorm,dx,ad
-real(8), dimension(npoin) :: b,x,ax,r
+real(dp)                   :: A(npoin,npoin),resnorm,dx,ad
+real(dp), dimension(npoin) :: b,x,ax,r
 
 integer                   :: npoin,nsteps,n
 
@@ -403,9 +402,9 @@ end subroutine
 !========================SOR SOLVER==========================================
 !subroutine SOR(A,b,x,jmax,nsteps)
 !
-!real(8)                       :: eps,pi,anorm,anormb,omega
-!real(8), dimension(jmax)      :: b,x
-!real(8), dimension(jmax,jmax) :: A
+!real(dp)                       :: eps,pi,anorm,anormb,omega
+!real(dp), dimension(jmax)      :: b,x
+!real(dp), dimension(jmax,jmax) :: A
 !
 !integer i,j,n,nsteps
 !
@@ -434,7 +433,7 @@ end subroutine
 
       IMPLICIT NONE
 
-      REAL(8)::A1(N,N),B1(N),X01(N),X(N),AX(N),r(N),NORM0,NORM,SUM1,SUM2
+      REAL(dp)::A1(N,N),B1(N),X01(N),X(N),AX(N),r(N),NORM0,NORM,SUM1,SUM2
       REAL   ::TOL
       INTEGER::K=1,N,i,j
 
