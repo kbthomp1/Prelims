@@ -11,7 +11,9 @@ module gridtools
 
 contains
 
-!==========================GRID FILE READ======================================
+!=============================== READGRID_LOU ===============================80
+! Read in grid file that is in Dr. Lou's format
+!============================================================================80
   subroutine readgrid_lou(ndimn,ntype,nelem,npoin,nface,nvertices,inpoel,     &
                           gridfile,coord,bcface)
   

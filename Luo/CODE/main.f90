@@ -1,8 +1,9 @@
 program main
 
-  use kinddefs,  only : dp
-  use gridtools, only : readgrid_lou, basis_function, face_norm
-  use solver,    only : get_lhspo, set_bc, get_soln
+  use kinddefs,   only : dp
+  use gridtools,  only : readgrid_lou, basis_function, face_norm
+  use solver,     only : get_lhspo, set_bc, get_soln
+  use io_helpers, only : write_tec_volume
 
 implicit none
 
@@ -11,14 +12,13 @@ implicit none
 !==============================================================================
 
 integer      :: ndimn,ntype,nelem,npoin,nface,nsteps
-integer      :: i,j,nnode,ielem,ipoin
-integer      :: ip1,ip2,ip3
+integer      :: i,j,nnode
+integer      :: ip1,ip2
 
 real(dp)      :: uinf,vinf,tolerance
 
-real(dp), dimension(:),   allocatable :: rhspo,phi,Vx_local,Vy_local,Vxarea
-real(dp), dimension(:),   allocatable :: Vyarea,area,Vx,Vy
-real(dp), dimension(:),   allocatable :: Vt
+real(dp), dimension(:),   allocatable :: rhspo,phi
+real(dp), dimension(:),   allocatable :: Vx,Vy,Vt
 
 real(dp), dimension(:,:), allocatable :: coord,geoel,lhspo,rface
 
@@ -83,36 +83,8 @@ allocate(Vt(npoin))
 
 call get_soln(Vx,Vy,Vt,phi,geoel,inpoel,npoin,nelem)
 
-!==============================================================================
-!                        TECPLOT OUTPUT
-!==============================================================================
+call write_tec_volume(tec_dataname,npoin,nelem,coord,inpoel,bcface,phi,Vx,Vy,Vt)
 
-open(21,file=tec_dataname,status='replace')
-
-write(21,*) 'TITLE = "',trim(tec_dataname),'"'
-write(21,*) 'VARIABLES = "X" "Y" "phi" "Vx" "Vy" "Vt"'
-write(21,*) 'ZONE NODES=',npoin,",ELEMENTS=",nelem,",DATAPACKING=POINT,",  &
-            "ZONETYPE=FETRIANGLE"
-do i=1,npoin
-  write(21,*) coord(1,i),coord(2,i),phi(i),Vx(i),Vy(i),Vt(i)
-end do
-
-do j=1,nelem
-  write(21,*) (inpoel(i,j),i=1,3)
-end do
-
-write(30,*) "RHSPO"
-do i=1,npoin
-  write(30,*) rhspo(i)
-end do
-
-write(30,*)
-write(30,*) "LHSPO"
-do i=1,npoin
-  write(30,*) lhspo(i,i)
-end do
-
-close(21)
 close(30)
 
 if(trim(bc_case)=="channel") then
