@@ -6,10 +6,55 @@ module solver
   private
 
   public :: get_lhspo
+  public :: get_rhspo
   public :: set_bc
   public :: get_soln
+  public :: solve
 
 contains
+
+!============================= GET_RHSPO ====================================80
+! Formulate the RHS load vector
+!============================================================================80
+  function get_rhspo(bcface,rface,nface,npoin,uinf,vinf) result(rhspo)
+  
+    integer,                 intent(in) :: nface,npoin
+    integer, dimension(:,:), intent(in) :: bcface
+  
+    real(dp), dimension(:,:), intent(in) :: rface
+    real(dp),                 intent(in) :: uinf,vinf
+  
+    real(dp), dimension(npoin) :: rhspo
+    real(dp) :: cface
+
+    integer :: ip1, ip2, iface
+    
+  continue 
+  
+    rhspo(1:npoin) = 0.0
+    
+    do iface=1,nface
+      if(bcface(3,iface) == 4) then
+        
+        ip1   = bcface(1,iface)
+        ip2   = bcface(2,iface)
+        
+    !    itype = bcface(4,iface)
+    !
+    !    roinf = uchar(1,itype)
+    !     uinf = uchar(2,itype)
+    !     vinf = uchar(3,itype)
+    !     pinf = uchar(4,itype)
+         
+        cface = 0.5*(uinf*rface(1,iface) + vinf*rface(2,iface))
+    
+        rhspo(ip1) = rhspo(ip1) + cface
+        rhspo(ip2) = rhspo(ip2) + cface
+    
+      end if
+    end do
+  
+  end function get_rhspo
 
 !================================ GET_LHSPO =================================80
 ! Form the global stiffness matrix
@@ -151,5 +196,38 @@ contains
 
     end do
   end subroutine get_soln
+
+!============================== SOLVE =======================================80
+! Solve the linear system per user's specified method
+!============================================================================80
+  subroutine solve(lin_solver,lhspo,rhspo,phi,npoin,nsteps,tolerance)
+
+    use linalg, only : gauss_seidel,jacobi,conjgrad
+
+    character(len=*), intent(in) :: lin_solver
+
+    integer, intent(in) :: npoin, nsteps
+
+    real(dp), dimension(npoin),       intent(in)    :: rhspo
+    real(dp), dimension(npoin),       intent(inout) :: phi
+    real(dp), dimension(npoin,npoin), intent(in)    :: lhspo
+
+    real(dp), intent(in) :: tolerance
+
+  continue
+
+    select case(lin_solver)
+    case("conjugate gradient")
+      call conjgrad(lhspo,rhspo,phi,npoin,nsteps)
+    case("point jacobi")
+      call jacobi(lhspo,rhspo,phi,npoin,nsteps)
+    case("gauss seidel")
+      call gauss_seidel(lhspo,rhspo,phi,npoin,tolerance)
+    case default
+      write(*,*) "Error: linear solver specified not available:",lin_solver
+      stop 1
+    end select
+
+  end subroutine solve
 
 end module solver

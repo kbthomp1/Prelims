@@ -8,6 +8,4 @@
   nsteps   = 1000000
 
   tec_dataname = "channel.dat"
-  res_dataname = "res_channel.dat"
-  comp_name    = "comp_channel.dat"
 /
