@@ -35,7 +35,7 @@ continue
   
 ! assemble geometry related matricies
   call basis_function(nelem,geoel,inpoel,coord)
-  call face_norm(rface,coord,bcface,nface,ndimn,npoin)
+  call face_norm(rface,coord,bcface,nface,ndimn)
   
 ! Formulate the load vector (RHS)
   rhspo = get_rhspo(bcface,rface,nface,npoin,uinf,vinf)

@@ -129,7 +129,7 @@ contains
     ib = bcface(1,1)
 
     lhspo(ib,ib) = lhspo(ib,ib)*1.0e+20_dp
-    rhspo(ib)   = lhspo(ib,ib)*phi_ib
+    rhspo(ib)    = lhspo(ib,ib)*phi_ib
 
   end subroutine
 

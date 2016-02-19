@@ -7,5 +7,7 @@
   nsteps    = 5000
   tolerance = 1.E-01
 
+  lin_solver = "point jacobi"
+
   tec_dataname = "channel.dat"
 /
