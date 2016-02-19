@@ -14,6 +14,8 @@ module tests
   real(dp), parameter ::  two   = 2.0_dp
   real(dp), parameter ::  three = 3.0_dp
 
+  real(dp), parameter ::  tolerance = 1.E-15_dp
+
   real(dp), dimension(6), parameter :: &
     kf_cgs = [ 1.9e19_dp, 3.e21_dp, 6.e18_dp, 1.e7_dp, 2.4e24_dp, 1.e5_dp ]
 
@@ -24,8 +26,8 @@ contains
 
   subroutine test_coef_conversion
 
-    real(dp), dimension(6) :: kf, kc, kb
-    real(dp), dimension(7) :: c, s_cgs, s_mks
+    real(dp), dimension(6) :: kf, kc, kb, convert
+    real(dp), dimension(7) :: c, s_cgs, s_mks, diff
 
     integer :: i
 
@@ -48,7 +50,28 @@ contains
     kb(1:6) = kf(1:6)/kc(1:6)
     s_mks = get_s(kf,kb,c) !kmol/(m^2 s)
 
-    write(*,*) "CHECK: diff = ", s_cgs*10._dp - s_mks
+    convert = [ 1.e-2_dp, 1.e-2_dp, 1.e-1_dp, 1.e-1_dp, 1.e-1_dp, one ]
+
+    !diff(1:6) = kf_cgs*convert - kf_mks
+    !diff(1:6) = diff(1:6)/kf_mks
+    !write(*,*) "CHECK: diff = ", diff(1:6)
+
+    write(*,*) "CHECK: s_cgs =", s_cgs
+    write(*,*) "CHECK: s_mks =", s_mks
+
+    diff = (s_cgs - 10._dp*s_mks)
+
+    write(*,*) "CHECK: diff = ", diff
+
+    do i = 1,6
+      if (diff(i) > tolerance) then
+        write(*,*) "FAILED: test_coef_conversion"
+        write(*,*) "something is wrong in the conversion of cgs to mks."
+        stop 1
+      end if
+    end do
+
+    write(*,*) "PASSED: test_coef_conversion"
 
   end subroutine test_coef_conversion
 
@@ -97,10 +120,11 @@ contains
 
     write(*,*) "CHECK: sum = ",sum_of_s
     if ( sum_of_s /= zero) then
-      write(*,*) "FAILED: sum of the source term vector is /= 0"
+      write(*,*) "FAILED: test_s_sum"
+      write(*,*) "sum of the source term vector is /= 0"
       stop 1
     else
-      write(*,*) "PASSED"
+      write(*,*) "PASSED: test_s_sum"
     end if
 
   end subroutine test_s_sum
