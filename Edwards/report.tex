@@ -20,8 +20,8 @@
 \newcommand{\kf}[1]{k_{f,#1}}
 \newcommand{\kb}[1]{k_{b,#1}}
 \newcommand{\kcf}[1]{\frac{k_{f,#1}}{k_{c,#1}}}
-\newcommand{\cg}[1]{C_{#1}^{(g)}}
-\newcommand{\cs}[1]{C_{#1}^{(s)}}
+\newcommand{\cg}[1]{{C_{#1}^{(g)}}}
+\newcommand{\cs}[1]{{C_{#1}^{(s)}}}
 
 
 \title{MAE 770 Written Preliminary Exam \#1}
@@ -91,9 +91,9 @@
   for that species as a product in the forward reaction.  $N_k$ denotes the
   number of species and $N_r$ denotes the number of reactions.  Additionally,
   the backward rate coefficient $k_{b,r}$ can be determined from the forward
-  rate coefficient $k_{f,r}$ and the equilibrium constant $K_{c,r}$.  This is much
-  better, since the law of mass action enables the determination of $K_{c,r}$ as
-  a function of species concentrations, resulting in $\sk =
+  rate coefficient $k_{f,r}$ and the equilibrium constant $k_{c,r}$.  This is much
+  better, since the law of mass action enables the determination of $k_{c,r}$ as
+  a function of species concentrations, $C_i$, resulting in $\sk =
   \sk(k_{f,r},C_1,\dots,C_{N_k})$. Thus, using \eref{sdot form} the $\sk$ source
   terms can be expressed as
   \begin{align}
@@ -190,14 +190,37 @@
   Converting $\kf{r}$ in \eref{kf-kb-cgs} to an SI basis ($m$, $kmol$, $s$),
   using $m = 100\, cm$ and $kmol = 1000\, mol$, yields
   \begin{equation}
-    \begin{alignedat}{2}
+    \boxed{\begin{alignedat}{2}
       \kf{1} &= 1.9e17 && \quad \frac{m}{s} \\
       \kf{2} &= 3e19   && \quad \frac{m}{s} \\
       \kf{3} &= 6e17   && \quad \frac{m^2}{kmol\text{-}s} \\
       \kf{4} &= 1e6    && \quad \frac{m^2}{kmol\text{-}s} \\
       \kf{5} &= 2.4e23 && \quad \frac{m^2}{kmol\text{-}s} \\
       \kf{6} &= 1e5    && \quad \frac{1}{s}
-    \end{alignedat}
+    \end{alignedat}}
   \end{equation}
+  Using this and \eref{kc-def}, $\kb{r}$ can also be defined in an SI basis
+  \begin{equation}
+    \boxed{\begin{alignedat}{2}
+      \kb{1} &= 1.9e17 \left(\frac{\cg{H_2}}{\cs{H}^2}\right) 
+                \quad && \frac{m^2}{kmol\text{-}s} \\
+      \kb{2} &= 3e19   \left(\frac{\cg{O_2}}{\cs{O}^2}\right)
+                \quad && \frac{m^2}{kmol\text{-}s} \\
+      \kb{3} &= 6e17   \left(\frac{\cs{H}\cs{O}}{\cs{OH}}\right)
+                \quad && \frac{1}{s} \\
+      \kb{4} &= 1e6    \left(\frac{\cs{H}\cs{OH}}{\cs{H_2O}}\right)
+                \quad && \frac{1}{s} \\
+      \kb{5} &= 2.4e23 \left(\frac{\cs{OH}^2}{\cs{H_2O}\cs{O}}\right)
+                \quad && \frac{m^2}{kmol\text{-}s} \\
+      \kb{6} &= 1e5    \left(\frac{\cs{H_2O}}{\cg{H_2O}}\right)
+                \quad && \frac{m}{s}
+    \end{alignedat}}
+    \label{kb-final}
+  \end{equation}
+  It should be noted that the species concentrations $C_{i}^{(g,s)}$ must be in
+  an SI basis for the units in \eref{kb-final} to be the correct units of
+  $\kb{r}$.  If the concentrations are in a another basis, then another
+  conversion will be necessary.
+
 \end{enumerate}
 \end{document}
