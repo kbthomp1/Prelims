@@ -17,30 +17,38 @@ module tests
   real(dp), dimension(6), parameter :: &
     kf_cgs = [ 1.9e19_dp, 3.e21_dp, 6.e18_dp, 1.e7_dp, 2.4e24_dp, 1.e5_dp ]
 
+  real(dp), dimension(6), parameter :: &
+    kf_mks = [ 1.9e17_dp, 3.e19_dp, 6.e17_dp, 1.e6_dp, 2.4e23_dp, 1.e5_dp ]
+
 contains
 
   subroutine test_coef_conversion
 
     real(dp), dimension(6) :: kf, kc, kb
-    real(dp), dimension(7) :: c
+    real(dp), dimension(7) :: c, s_cgs, s_mks
 
     integer :: i
 
   continue
 
-!   Forward rate constants
+!   Everything in cm, mol, s
     kf = kf_cgs
-
-!   Concentations in cgs units
     do i = 1,7
-      c(i) = real(i,dp)
+      c(i) = real(i,dp) !mol/cm^(2,3)
     end do
-
-!   Equilibrium constants
     kc(1:6) = get_kc(c)
-
-!   Backward rate constants
     kb(1:6) = kf(1:6)/kc(1:6)
+    s_cgs = get_s(kf,kb,c) !mol/(cm^2 s)
+
+!   Everything in m, kmol, s
+    c(1:3) = 1.e3_dp*c(1:3) !kmol/m^3
+    c(4:7) = 10._dp*c(4:7)  !kmol/m^2
+    kf = kf_mks
+    kc(1:6) = get_kc(c)
+    kb(1:6) = kf(1:6)/kc(1:6)
+    s_mks = get_s(kf,kb,c) !kmol/(m^2 s)
+
+    write(*,*) "CHECK: diff = ", s_cgs*10._dp - s_mks
 
   end subroutine test_coef_conversion
 

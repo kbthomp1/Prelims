@@ -11,6 +11,9 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{titlesec}
+\usepackage{empheq}
+
+\newcommand*\widefbox[1]{\fbox{\hspace{2em}#1\hspace{2em}}}
 
 \newcommand{\eref}[1]{Eq.~(\ref{#1})}
 \newcommand{\erefs}[2]{Eq.s~(\ref{#1}-\ref{#2})}
@@ -96,7 +99,7 @@
   a function of species concentrations, $C_i$, resulting in $\sk =
   \sk(k_{f,r},C_1,\dots,C_{N_k})$. Thus, using \eref{sdot form} the $\sk$ source
   terms can be expressed as
-  \begin{align}
+  \begin{empheq}[box=\boxed]{align}
     \skg{H_2}  &= -\left( \kf{1} \cg{H_2} - \kcf{1} {\cs{H}}^2 \right) \\
     \skg{O_2}  &= -\left( \kf{2} \cg{O_2} - \kcf{2} {\cs{O}}^2 \right) \\
     \skg{H_2O} &= \kf{6} \cs{H_2O} - \kcf{6} \cg{H_2O} \\
@@ -121,7 +124,7 @@
       &-\left( \kf{6} \cs{H_2O} - \kcf{6} \cg{H_2O} \right)
     \end{split}
     \label{source terms}
-  \end{align}
+  \end{empheq}
 
 \item Determining the units for the forward and backward rate coefficients,
   $k_f$ and $k_b$, begins with looking at the units of $\sk$.  Since the source
