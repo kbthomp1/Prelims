@@ -13,11 +13,12 @@
 \usepackage{titlesec}
 
 \newcommand{\eref}[1]{Eq.~(\ref{#1})}
-\newcommand{\erefs}[1]{Eq.s~(\ref{#1})}
+\newcommand{\erefs}[2]{Eq.s~(\ref{#1}-\ref{#2})}
 \newcommand{\sk}{\dot{s}_k}
 \newcommand{\skg}[1]{{\dot{s}_{#1}}^{(g)}}
 \newcommand{\sks}[1]{{\dot{s}_{#1}}^{(s)}}
 \newcommand{\kf}[1]{k_{f,#1}}
+\newcommand{\kb}[1]{k_{b,#1}}
 \newcommand{\kcf}[1]{\frac{k_{f,#1}}{k_{c,#1}}}
 \newcommand{\cg}[1]{C_{#1}^{(g)}}
 \newcommand{\cs}[1]{C_{#1}^{(s)}}
@@ -121,6 +122,82 @@
     \end{split}
     \label{source terms}
   \end{align}
-  
+
+\item Determining the units for the forward and backward rate coefficients,
+  $k_f$ and $k_b$, begins with looking at the units of $\sk$.  Since the source
+  term was found to have units of $moles/(area^2$-$sec)$, in the generic sense, it
+  would have proper units of $mol/(cm^2$-$s)$ using a $cm$, $mol$, $s$ basis.
+  The units of $k_f$ and $k_b$ will vary for each reaction, but must ultimately
+  conform to the fact that $R_{f,r}$ and $R_{b,r}$ in \eref{sdot form} must have
+  units of $mol/(cm^2$-$s)$.  For the first reaction
+  \begin{equation}
+    \kf{1} = 1.9e19 \quad \frac{cm}{s}
+    \label{kf_units}
+  \end{equation}
+  which satisfies
+  \begin{equation}
+    R_{f,1} = k_{f,1}\cg{H_2} = \frac{cm}{s}\frac{mol}{cm^3} =
+    \frac{mol}{cm^2\text{-}s}
+    \label{R_units}
+  \end{equation}
+ Much more generally, the units for $k_f$ can be expressed as
+  \begin{equation}
+    \kf{r} = \frac{mol}{(cm^2)(s)\prod_{i=1}^{N_k}\left(
+    \left( \frac{mol}{cm^3} \right)^{\nu_{i,r}^{'(g)}} \left( \frac{mol}{cm^2}
+    \right)^{\nu_{i,r}^{'(s)}} \right)}
+    \label{kf-unit-formula}
+  \end{equation}
+  where $\nu_{i,r}^{'(g)}$ is the stoichiometric coefficient of gas-phase
+  reactant species $i$ in reaction $r$, and $\nu_{i,r}^{'(s)}$ is the
+  stoichiometric coefficient of surface reactant species $i$ in reaction $r$.
+  Since $R_{b,r}$ must also have units of $mol/(cm$-$s)$, the same reasoning can
+  be used to derive
+  \begin{equation}
+    \kb{r} = \frac{mol}{(cm^2)(s)\prod_{i=1}^{N_k}\left(
+    \left( \frac{mol}{cm^3} \right)^{\nu_{i,r}^{''(g)}} \left( \frac{mol}{cm^2}
+    \right)^{\nu_{i,r}^{''(s)}} \right)}
+    \label{kb-unit-formula}
+  \end{equation}
+  where $\nu_{i,r}^{''(g)}$ and $\nu_{i,r}^{''(s)}$ are the are the
+  stoichiometric coefficients of gas-phase and surface product species $i$ in
+  reaction $r$, respectively.  Using \erefs{kf-unit-formula}{kb-unit-formula},
+  the units of $\kf{r}$ and $\kb{r}$ (using a $cm$, $mol$, $s$ basis) are
+  \begin{align}
+    \begin{alignedat}{2}
+      \kf{1} &= 1.9e19 && \quad \frac{cm}{s} \\
+      \kf{2} &= 3e21   && \quad \frac{cm}{s} \\
+      \kf{3} &= 6e18   && \quad \frac{cm^2}{mol\text{-}s} \\
+      \kf{4} &= 1e7    && \quad \frac{cm^2}{mol\text{-}s} \\
+      \kf{5} &= 2.4e24 && \quad \frac{cm^2}{mol\text{-}s} \\
+      \kf{6} &= 1e5    && \quad \frac{1}{s}
+    \end{alignedat} \qquad\qquad
+    \begin{alignedat}{2}
+      \kb{1} &= \kcf{1} \, && \frac{cm^2}{mol\text{-}s} \\
+      \kb{2} &= \kcf{2} \, && \frac{cm^2}{mol\text{-}s} \\
+      \kb{3} &= \kcf{3} \, && \frac{1}{s} \\
+      \kb{4} &= \kcf{4} \, && \frac{1}{s} \\
+      \kb{5} &= \kcf{5} \, && \frac{cm^2}{mol\text{-}s} \\
+      \kb{6} &= \kcf{6} \, && \frac{cm}{s}
+    \end{alignedat}
+    \label{kf-kb-cgs}
+  \end{align}
+  by the law of mass action, the equilibrium constant can be defined as
+  \begin{equation}
+    k_{c,r} = \frac{\prod_{i=1}^{N_k}(C_i^{\nu_{i,r}^{''}})}
+    {\prod_{i=1}^{N_k}(C_i^{\nu_{i,r}^{'}})}
+    \label{kc-def}
+  \end{equation}
+  Converting $\kf{r}$ in \eref{kf-kb-cgs} to an SI basis ($m$, $kmol$, $s$),
+  using $m = 100\, cm$ and $kmol = 1000\, mol$, yields
+  \begin{equation}
+    \begin{alignedat}{2}
+      \kf{1} &= 1.9e17 && \quad \frac{m}{s} \\
+      \kf{2} &= 3e19   && \quad \frac{m}{s} \\
+      \kf{3} &= 6e17   && \quad \frac{m^2}{kmol\text{-}s} \\
+      \kf{4} &= 1e6    && \quad \frac{m^2}{kmol\text{-}s} \\
+      \kf{5} &= 2.4e23 && \quad \frac{m^2}{kmol\text{-}s} \\
+      \kf{6} &= 1e5    && \quad \frac{1}{s}
+    \end{alignedat}
+  \end{equation}
 \end{enumerate}
 \end{document}
