@@ -24,6 +24,9 @@ module tests
 
 contains
 
+!======================== TEST_COEF_CONVERSION ==============================80
+! Test that kf and kb are correct in both mks and cgs unit basis
+!============================================================================80
   subroutine test_coef_conversion
 
     real(dp), dimension(6) :: kf, kc, kb, convert
@@ -75,6 +78,9 @@ contains
 
   end subroutine test_coef_conversion
 
+!============================ TEST_S_SUM ====================================80
+! Test that the sum of the source terms is zero (wdot, actually...)
+!============================================================================80
   subroutine test_s_sum
 
     real(dp), dimension(6) :: kf, kc, kb
