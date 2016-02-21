@@ -92,6 +92,10 @@ contains
 
     logical :: debug = .false.
 
+    real(dp), parameter :: m_H = one
+    real(dp), parameter :: m_O = 8._dp
+    real(dp), parameter :: m_N = 14._dp
+
   continue
 
 !   Forward rate constants
@@ -103,7 +107,8 @@ contains
     end do
 
 !   Molecular weights
-    m_wt(1:7) = [ two, two, three, one, one, two, three ]
+    m_wt(1:7) = [ two*m_H, two*m_O, two*m_H + m_O, m_H, m_O, m_O + m_H, &
+                  two*m_H + m_O ]
 
 !   Equilibrium constants
     kc(1:6) = get_kc(c)
@@ -119,10 +124,13 @@ contains
     else
       s = get_s(kf,kb,c)
       do i = 1, 7
-        s = m_wt(i)*s(i)
+        s(i) = m_wt(i)*s(i)
       end do
       sum_of_s = sum(s(1:7))
     end if
+
+    write(*,*) "CHECK: M = ",m_wt
+    write(*,*) "CHECK: s = ",s
 
     write(*,*) "CHECK: sum = ",sum_of_s
     if ( sum_of_s /= zero) then
