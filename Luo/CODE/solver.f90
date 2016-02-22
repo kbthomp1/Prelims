@@ -39,14 +39,7 @@ contains
         ip1   = bcface(1,iface)
         ip2   = bcface(2,iface)
         
-    !    itype = bcface(4,iface)
-    !
-    !    roinf = uchar(1,itype)
-    !     uinf = uchar(2,itype)
-    !     vinf = uchar(3,itype)
-    !     pinf = uchar(4,itype)
-         
-        cface = 0.5*(uinf*rface(1,iface) + vinf*rface(2,iface))
+        cface = 0.5_dp*(uinf*rface(1,iface) + vinf*rface(2,iface))
     
         rhspo(ip1) = rhspo(ip1) + cface
         rhspo(ip2) = rhspo(ip2) + cface
@@ -70,7 +63,7 @@ contains
 
     real(dp), dimension(3) :: bx, by
 
-    real(dp) :: rjac
+    real(dp) :: area
 
     integer :: ielem, ip1, ip2,ip3
     integer :: i, ip, j, jp
@@ -92,13 +85,13 @@ contains
       by(2) = geoel(4,ielem)
       by(3) = -(by(1)+by(2))
 
-      rjac = 0.5*geoel(5,ielem)
+      area = 0.5*geoel(5,ielem)
 
       do i=1,nnode
         ip = inpoel(i,ielem)
         do j=1,nnode
           jp = inpoel(j,ielem)
-          lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*rjac
+          lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
         end do
       end do
 
