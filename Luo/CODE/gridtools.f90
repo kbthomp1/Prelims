@@ -65,7 +65,22 @@ contains
   
   end subroutine
 
-!========================GEOMETRY FACES=========================================
+!=========================== BASIS_FUNCTION =================================80
+! Compute the 2D finite element basis functions for triangles
+!
+! B_i = (a_i*x + b_i*y + c_i)/D
+!
+! a_i =  (y_j - y_k)
+! b_i = -(x_j - x_k)
+! c_i =  (x_j*y_k - x_k*y_j)
+!
+! D = 2*(area of element)   !NOTE: this is twice the area of the element
+!   = a_1*b_2 - a_2*b_1
+!   = a_2*b_3 - a_3*b_2   All of these
+!   = a_3*b_1 - a_1*b_3   are equivalent
+!   = c_1 + c_2 + c_3
+!
+!============================================================================80
   subroutine basis_function(nelem,geoel,inpoel,coord)
  
     integer,                 intent(in) :: nelem
@@ -95,14 +110,16 @@ contains
     
       D    = a(1)*b(2)-a(2)*b(1)
       dd   = 1/D
-    
+
+      !NOTE: this is twice the area of the element
       geoel(5,ielem) = D
     
       a(1) = a(1)*dd
       a(2) = a(2)*dd
       b(1) = b(1)*dd
       b(2) = b(2)*dd
-    
+   
+      !Coefficients of the basis function
       geoel(1,ielem) = a(1)
       geoel(2,ielem) = a(2)
       geoel(3,ielem) = b(1)
@@ -112,8 +129,9 @@ contains
     
     end subroutine
   
-  !==========================CALCULATE NORMAL VECTORS============================
-  
+!=========================== SET_BC =========================================80
+! Calculate normal vector at each interface
+!============================================================================80
   subroutine face_norm(rface,coord,bcface,nface,ndimn)
 
     integer,                 intent(in) :: nface, ndimn

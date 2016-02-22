@@ -4,10 +4,10 @@
   uinf     = 1.0
   vinf     = 0.0
   
-  nsteps    = 5000
+  nsteps    = 500
   tolerance = 1.E-01
 
-  lin_solver = "point jacobi"
+  lin_solver = "gauss seidel"
 
   tec_dataname = "channel.dat"
 /
