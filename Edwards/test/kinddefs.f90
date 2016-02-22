@@ -5,6 +5,6 @@ module kinddefs
 
   public :: dp
 
-  integer, parameter :: dp = selected_real_kind(P=15)
+  integer, parameter :: dp = selected_real_kind(P=30)
 
 end module kinddefs

@@ -41,7 +41,8 @@ contains
     do i = 1,7
       c(i) = real(i,dp) !mol/cm^(2,3)
     end do
-    kc(1:6) = get_kc(c)
+    !kc(1:6) = get_kc(c)
+    kc = one
     kb(1:6) = kf(1:6)/kc(1:6)
     s_cgs = get_s(kf,kb,c) !mol/(cm^2 s)
 
@@ -49,15 +50,12 @@ contains
     c(1:3) = 1.e3_dp*c(1:3) !kmol/m^3
     c(4:7) = 10._dp*c(4:7)  !kmol/m^2
     kf = kf_mks
-    kc(1:6) = get_kc(c)
+    !kc(1:6) = get_kc(c)
+    kc = one
     kb(1:6) = kf(1:6)/kc(1:6)
     s_mks = get_s(kf,kb,c) !kmol/(m^2 s)
 
     convert = [ 1.e-2_dp, 1.e-2_dp, 1.e-1_dp, 1.e-1_dp, 1.e-1_dp, one ]
-
-    !diff(1:6) = kf_cgs*convert - kf_mks
-    !diff(1:6) = diff(1:6)/kf_mks
-    !write(*,*) "CHECK: diff = ", diff(1:6)
 
     write(*,*) "CHECK: s_cgs =", s_cgs
     write(*,*) "CHECK: s_mks =", s_mks
@@ -111,12 +109,15 @@ contains
                   two*m_H + m_O ]
 
 !   Equilibrium constants
-    kc(1:6) = get_kc(c)
+    !kc(1:6) = get_kc(c)
+    kc(1:6) = one
 
 !   Backward rate constants
     kb(1:6) = kf(1:6)/kc(1:6)
 
+    !debug = .true.
     if (debug) then
+      s = zero
       s(1:2) = get_s_test(kf,kb,c)
       s(1) = two*s(1)
       s(2) = s(2)
@@ -129,10 +130,12 @@ contains
       sum_of_s = sum(s(1:7))
     end if
 
-    write(*,*) "CHECK: M = ",m_wt
-    write(*,*) "CHECK: s = ",s
+20 format(A,20e13.4)
 
-    write(*,*) "CHECK: sum = ",sum_of_s
+    write(*,20) "CHECK: M = ",m_wt
+    write(*,20) "CHECK: s = ",s
+
+    write(*,20) "CHECK: sum = ",sum_of_s
     if ( sum_of_s /= zero) then
       write(*,*) "FAILED: test_s_sum"
       write(*,*) "sum of the source term vector is /= 0"

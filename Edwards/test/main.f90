@@ -8,6 +8,6 @@ program main
 continue
 
   call test_s_sum
-  !call test_coef_conversion
+  call test_coef_conversion
 
 end program main

@@ -22,9 +22,11 @@
 \newcommand{\sks}[1]{{\dot{s}_{#1}}^{(s)}}
 \newcommand{\kf}[1]{k_{f,#1}}
 \newcommand{\kb}[1]{k_{b,#1}}
+\newcommand{\kc}[1]{k_{c,#1}}
 \newcommand{\kcf}[1]{\frac{k_{f,#1}}{k_{c,#1}}}
 \newcommand{\cg}[1]{{C_{#1}^{(g)}}}
 \newcommand{\cs}[1]{{C_{#1}^{(s)}}}
+\newcommand{\sumk}{\sum_{i=1}^{N_k}}
 
 
 \title{MAE 770 Written Preliminary Exam \#1}
@@ -93,16 +95,14 @@
   reaction $r$ as a reactant in the forward reaction, and $\nu_{k,r}^{''}$ is
   for that species as a product in the forward reaction.  $N_k$ denotes the
   number of species and $N_r$ denotes the number of reactions.  Additionally,
-  the backward rate coefficient $k_{b,r}$ can be determined from the forward
-  rate coefficient $k_{f,r}$ and the equilibrium constant $k_{c,r}$.  This is much
-  better, since the law of mass action enables the determination of $k_{c,r}$ as
-  a function of species concentrations, $C_i$, resulting in $\sk =
-  \sk(k_{f,r},C_1,\dots,C_{N_k})$. Thus, using \eref{sdot form} the $\sk$ source
-  terms can be expressed as
+  the backward rate coefficient $k_{b,r}$ is usually determined from the forward
+  rate coefficient $k_{f,r}$ and the equilibrium constant $k_{c,r}$.  The later
+  of these is often available as a curve fit function of temperature.  Thus,
+  using \eref{sdot form} the $\sk$ source terms can be expressed as
   \begin{empheq}[box=\boxed]{align}
     \skg{H_2}  &= -\left( \kf{1} \cg{H_2} - \kcf{1} {\cs{H}}^2 \right) \\
     \skg{O_2}  &= -\left( \kf{2} \cg{O_2} - \kcf{2} {\cs{O}}^2 \right) \\
-    \skg{H_2O} &= \kf{6} \cs{H_2O} - \kcf{6} \cg{H_2O} \\
+    \skg{H_2O} &= \left( \kf{6} \cs{H_2O} - \kcf{6} \cg{H_2O} \right) \\
     \begin{split}
       \sks{H}    &= 2 \left( \kf{1} \cg{H_2} - \kcf{1} {\cs{H}}^2 \right) \\
       &-\left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{OH} \right) \\
@@ -114,7 +114,7 @@
       &+\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right)
     \end{split} \\
     \begin{split}
-      \sks{OH} &= 2 \left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{HO} \right) \\
+      \sks{OH} &= \left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{HO} \right) \\
       &-\left( \kf{4} \cs{H} \cs{OH} - \kcf{4} \cs{H_2O} \right) \\
       &-2\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right)
     \end{split} \\
@@ -184,12 +184,6 @@
     \end{alignedat}
     \label{kf-kb-cgs}
   \end{align}
-  by the law of mass action, the equilibrium constant can be defined as
-  \begin{equation}
-    k_{c,r} = \frac{\prod_{i=1}^{N_k}(C_i^{\nu_{i,r}^{''}})}
-    {\prod_{i=1}^{N_k}(C_i^{\nu_{i,r}^{'}})}
-    \label{kc-def}
-  \end{equation}
   Converting $\kf{r}$ in \eref{kf-kb-cgs} to an SI basis ($m$, $kmol$, $s$),
   using $m = 100\, cm$ and $kmol = 1000\, mol$, yields
   \begin{equation}
@@ -202,28 +196,51 @@
       \kf{6} &= 1e5    && \quad \frac{1}{s}
     \end{alignedat}}
   \end{equation}
-  Using this and \eref{kc-def}, $\kb{r}$ can also be defined in an SI basis
+  Using this and \eref{kb-unit-formula}, $\kb{r}$ can also be defined in an SI basis
   \begin{equation}
     \boxed{\begin{alignedat}{2}
-      \kb{1} &= 1.9e17 \left(\frac{\cg{H_2}}{\cs{H}^2}\right) 
+      \kb{1} &= \frac{1.9e17 }{\kc{1}}
                 \quad && \frac{m^2}{kmol\text{-}s} \\
-      \kb{2} &= 3e19   \left(\frac{\cg{O_2}}{\cs{O}^2}\right)
+      \kb{2} &= \frac{3e19   }{\kc{2}}
                 \quad && \frac{m^2}{kmol\text{-}s} \\
-      \kb{3} &= 6e17   \left(\frac{\cs{H}\cs{O}}{\cs{OH}}\right)
+      \kb{3} &= \frac{6e17   }{\kc{3}}
                 \quad && \frac{1}{s} \\
-      \kb{4} &= 1e6    \left(\frac{\cs{H}\cs{OH}}{\cs{H_2O}}\right)
+      \kb{4} &= \frac{1e6    }{\kc{4}}
                 \quad && \frac{1}{s} \\
-      \kb{5} &= 2.4e23 \left(\frac{\cs{OH}^2}{\cs{H_2O}\cs{O}}\right)
+      \kb{5} &= \frac{2.4e23 }{\kc{5}}
                 \quad && \frac{m^2}{kmol\text{-}s} \\
-      \kb{6} &= 1e5    \left(\frac{\cs{H_2O}}{\cg{H_2O}}\right)
+      \kb{6} &= \frac{1e5    }{\kc{6}}
                 \quad && \frac{m}{s}
     \end{alignedat}}
     \label{kb-final}
   \end{equation}
-  It should be noted that the species concentrations $C_{i}^{(g,s)}$ must be in
+  It should be noted that the equilibrium constants $\kc{r}$ must be in
   an SI basis for the units in \eref{kb-final} to be the correct units of
-  $\kb{r}$.  If the concentrations are in a another basis, then another
-  conversion will be necessary.
-
+  $\kb{r}$.  If they in a another basis, then another conversion will be
+  necessary.  The conversion of $\kc{r}$ from a $cm$, $mol$, $s$ basis to a $m$,
+  $kmol$, $s$ basis can be derived from \erefs{kf-unit-formula}{kb-unit-formula}
+  as
+  \begin{gather}
+    \begin{split}
+      \kc{r}^{(cgs)} = \frac{\kf{r}^{(cgs)}}{\kb{r}^{(cgs)}} &= 
+      \frac{ \prod_{i=1}^{N_k}\left(
+      \left( \frac{mol}{cm^3} \right)^{\nu_{i,r}^{''(g)}} \left( \frac{mol}{cm^2}
+      \right)^{\nu_{i,r}^{''(s)}} \right)}
+      {\prod_{i=1}^{N_k}\left(
+      \left( \frac{mol}{cm^3} \right)^{\nu_{i,r}^{'(g)}} \left( \frac{mol}{cm^2}
+      \right)^{\nu_{i,r}^{'(s)}} \right)} \\
+      &= \frac{(mol)^a}{ (cm)^b}
+    \end{split} \\
+    \begin{aligned}
+      a &= {\sumk \left(\nu_{i,r}^{''}-\nu_{i,r}^{'} \right)} \\
+      b &= {\sumk\left(3{(\nu_{i,r}^{''} - \nu_{i,r}^{'})^{(g)}}
+          + 2(\nu_{i,r}^{''} - \nu_{i,r}^{'})^{(s)} \right)} 
+    \end{aligned}
+  \end{gather}
+  \begin{equation}
+    \kc{r}^{(mks)} = \kc{r}^{(cgs)}
+    \left(\frac{kmol}{1000 \, mol}\right)^a
+    \left( \frac{100 \, cm}{m} \right)^b
+  \end{equation}
 \end{enumerate}
 \end{document}
