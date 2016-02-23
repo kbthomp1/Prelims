@@ -18,10 +18,10 @@ contains
   subroutine read_namelist
 
     use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps, &
-                              tec_dataname, lin_solver, tolerance, nvars, neqns
+                              tec_dataname, lin_solver, tolerance
 
     namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
-                        lin_solver, tolerance, nvars, neqns
+                        lin_solver, tolerance
 
   continue
 
@@ -30,12 +30,6 @@ contains
 
     !Number of verticies per element (triangles, quads, etc.)
     nnode = 3
-
-    !Number of unknowns to solve for
-    nvars = 1
-
-    !Number of equations
-    neqns = 1
 
     !X-direction freestream velocity
     uinf = 1.0_dp
@@ -70,8 +64,8 @@ contains
     integer,                 intent(in) :: npoin, nelem
     integer, dimension(:,:), intent(in) :: inpoel
 
-    real(dp), dimension(:),   intent(in) :: Vx, Vy, Vt
-    real(dp), dimension(:,:), intent(in) :: coord, phi
+    real(dp), dimension(:),   intent(in) :: phi, Vx, Vy, Vt
+    real(dp), dimension(:,:), intent(in) :: coord
 
     character(len=*), intent(in) :: tec_dataname
 
@@ -86,7 +80,7 @@ contains
     write(21,*) 'ZONE NODES=',npoin,",ELEMENTS=",nelem,",DATAPACKING=POINT,",  &
                 "ZONETYPE=FETRIANGLE"
     do i=1,npoin
-      write(21,*) coord(1,i),coord(2,i),phi(1,i),Vx(i),Vy(i),Vt(i)
+      write(21,*) coord(1,i),coord(2,i),phi(i),Vx(i),Vy(i),Vt(i)
     end do
     
     do j=1,nelem

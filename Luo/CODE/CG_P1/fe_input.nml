@@ -1,8 +1,6 @@
 &fe_input
   gridfile = "gridfile"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
-  nvars    = 2  !number of unknowns to solve for
-  neqns    = 2  !number of equations
   uinf     = 1.0
   vinf     = 0.0
   
