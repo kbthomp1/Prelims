@@ -2,8 +2,11 @@
 %     Created: Thu Feb 18 01:00 PM 2016 E
 % Last Change: Thu Feb 18 01:00 PM 2016 E
 %
-\documentclass[a4paper]{report}
+\documentclass{report}
 
+\usepackage[a4paper, margin=1in]{geometry}
+
+\usepackage{listings}
 \usepackage{mathtools}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -12,12 +15,15 @@
 \usepackage{subcaption}
 \usepackage{titlesec}
 \usepackage{empheq}
+\usepackage{pdfpages}
+\usepackage{enumitem}
 
 \newcommand*\widefbox[1]{\fbox{\hspace{2em}#1\hspace{2em}}}
 
 \newcommand{\eref}[1]{Eq.~(\ref{#1})}
 \newcommand{\erefs}[2]{Eq.s~(\ref{#1}-\ref{#2})}
 \newcommand{\sk}{\dot{s}_k}
+\newcommand{\wk}{\dot{w}_k}
 \newcommand{\skg}[1]{{\dot{s}_{#1}}^{(g)}}
 \newcommand{\sks}[1]{{\dot{s}_{#1}}^{(s)}}
 \newcommand{\kf}[1]{k_{f,#1}}
@@ -27,7 +33,11 @@
 \newcommand{\cg}[1]{{C_{#1}^{(g)}}}
 \newcommand{\cs}[1]{{C_{#1}^{(s)}}}
 \newcommand{\sumk}{\sum_{i=1}^{N_k}}
-
+\newcommand{\ry}{{\rho Y_{k}^{(g)}}}
+\newcommand{\yk}{{Y_{k}^{(g)}}}
+\newcommand{\dint}[1]{\int_{\Omega}{#1} d \Omega}
+\newcommand{\fint}[1]{\int_{\Gamma}{#1} d \Gamma}
+\newcommand{\flux}{\vec{F}}
 
 \title{MAE 770 Written Preliminary Exam \#1}
 
@@ -35,11 +45,14 @@
 
 \begin{document}
 \maketitle
-\begin{enumerate}
+
+\includepdf{mae770-2016-1.pdf}
+
+\begin{enumerate}[label=(\alph*)]
   \item The units can be determined from the left hand side of the equation
     \begin{equation}
       \rho D_k \frac{\partial Y_k^{(g)}}{\partial x_j} \cdot \hat{n}_j = M_k \sk
-      \label{bc posed}
+      \label{bc-posed}
     \end{equation}
   Using the following nomenclature:
   \begin{tabbing}
@@ -49,7 +62,7 @@
     $l$ \> length \\
     $t$ \> time
   \end{tabbing}
-  The units of the variables on the left hand side of \ref{bc posed} are
+  The units of the variables on the left hand side of \ref{bc-posed} are
   \begin{align*}
     \rho &= \frac{m}{l^3} \\
     D_k &= \frac{l^2}{t} \\
@@ -57,7 +70,7 @@
   \end{align*}
   The mass fraction, $Y_k^{(g)}$, is unitless, as well as the unit normal vector,
   $\hat{n}_j$. Since the unit of molecular weight are, $M_k = m/N$, we can
-  rearrange \eref{bc posed} and solve for the units of $\sk$
+  rearrange \eref{bc-posed} and solve for the units of $\sk$
   \begin{equation}
     \label{units sdot}
     \begin{aligned}
@@ -79,8 +92,7 @@
     \boxed{\Gamma = \frac{moles}{area^2}}
   \]
 
-\item
-  The formulation of the source terms $\sk$ for $k=$ gas species and $k=$
+\item The formulation of the source terms $\sk$ for $k=$ gas species and $k=$
   surface species can be expressed as
   \begin{equation}
     \label{sdot form}
@@ -107,26 +119,50 @@
       \sks{H}    &= 2 \left( \kf{1} \cg{H_2} - \kcf{1} {\cs{H}}^2 \right) \\
       &-\left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{OH} \right) \\
       &-\left( \kf{4} \cs{H} \cs{OH} - \kcf{4} \cs{H_2O} \right)
+      \label{H-source}
     \end{split} \\
     \begin{split}
       \sks{O} &= 2 \left( \kf{2} \cg{O_2} - \kcf{2} {\cs{O}}^2 \right) \\
       &-\left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{OH} \right) \\
       &+\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right)
+      \label{O-source}
     \end{split} \\
     \begin{split}
       \sks{OH} &= \left( \kf{3} \cs{H} \cs{O} - \kcf{3} \cs{HO} \right) \\
       &-\left( \kf{4} \cs{H} \cs{OH} - \kcf{4} \cs{H_2O} \right) \\
       &-2\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right)
+      \label{OH-source}
     \end{split} \\
     \begin{split}
       \sks{H_2O} &= \left( \kf{4} \cs{H} \cs{OH} - \kcf{4} \cs{H_2O} \right) \\
       &+\left( \kf{5} {\cs{OH}}^2 - \kcf{5} \cs{H_2O} \cs{O} \right) \\
       &-\left( \kf{6} \cs{H_2O} - \kcf{6} \cg{H_2O} \right)
+      \label{H2Os-source}
     \end{split}
-    \label{source terms}
   \end{empheq}
 
-\item Determining the units for the forward and backward rate coefficients,
+  \item By characterizing the concentrations of surface species as
+    \begin{equation}
+      C_i = \theta_i \Gamma
+      \label{surface-c}
+    \end{equation}
+    It becomes clear that
+    \begin{equation}
+      \frac{\partial C_i}{\partial t} = \frac{\partial \theta_i}{\partial t} \Gamma = \sks{i}
+    \end{equation}
+    Thus, if the time variation of the surface coverage is held to be zero
+    \begin{equation}
+      \boxed{
+        \begin{aligned}
+          \frac{\partial \theta_i}{\partial t} &= \frac{\sks{i}}{\Gamma} = 0 \\
+        \end{aligned}
+      }
+      \label{steady-surf-cov}
+    \end{equation}
+    For $i$=surface species. This reduces \erefs{H-source}{H2Os-source} to a
+    set of linear equations to be solved for all surface species concentrations.
+
+  \item Determining the units for the forward and backward rate coefficients,
   $k_f$ and $k_b$, begins with looking at the units of $\sk$.  Since the source
   term was found to have units of $moles/(area^2$-$sec)$, in the generic sense, it
   would have proper units of $mol/(cm^2$-$s)$ using a $cm$, $mol$, $s$ basis.
@@ -143,7 +179,7 @@
     \frac{mol}{cm^2\text{-}s}
     \label{R_units}
   \end{equation}
- Much more generally, the units for $k_f$ can be expressed as
+ More generally, the units for $k_f$ can be expressed as
   \begin{equation}
     \kf{r} = \frac{mol}{(cm^2)(s)\prod_{i=1}^{N_k}\left(
     \left( \frac{mol}{cm^3} \right)^{\nu_{i,r}^{'(g)}} \left( \frac{mol}{cm^2}
@@ -242,5 +278,132 @@
     \left(\frac{kmol}{1000 \, mol}\right)^a
     \left( \frac{100 \, cm}{m} \right)^b
   \end{equation}
+  \item The coupling of the catalytic boundary condition specified in
+    \eref{bc-posed} can be accomplished by first examining the finite volume
+    (FV) method used.  By integrating and applying the Green-Gauss theorem, the
+    species conservation equation can written as
+    \begin{equation}
+      \frac{\partial}{\partial t}\int_{\Omega}{\ry d \Omega}
+      + \fint{\left( \ry u_j - \rho D_k
+        \frac{\partial Y_{k}^{(g)}}{\partial x_j}\right) \cdot \hat{n}_j }
+      = \dint{\wk}
+      \label{continuity}
+    \end{equation}
+    Where $\Omega$ is a cell volume domain and $\Gamma$ is the
+    interface/boundaries of that cell.  For a first order FV scheme, $\ry$ and
+    $\wk$ become cell averaged quantities
+    \begin{align}
+      \overline{\ry} &= \frac{1}{V}\dint{\ry} \\
+      \overline{\wk} &= \frac{1}{V}\dint{\wk}
+      \label{avg-q}
+    \end{align}
+    The fluxes at the cell interfaces are discontinuous; therefore, a flux function
+    $\flux$ = $\flux (\vec{q}_L, \vec{q}_R)$ is used evaluate fluxes at the cell interface.
+    The vectors $\vec{q_{L,R}}$ denote the interface left and right states used
+    in evaluating the flux. If \eref{continuity} is integrated explicitly in
+    time, $\overline{\ry}$ can be updated via
+    \begin{equation}
+      (\overline{\ry})_{i}^{n+1} = (\overline{\ry})^{n}_i - \Delta t (R_k)_i
+      \label{expl-fv}
+    \end{equation}
+    Where the superscript $^n$ denotes the time level, the subscript $_i$
+    denotes the node or cell number, and $(R_k)_i$ is the residual of species
+    $k$ flux at node or cell $i$ computed by summing the fluxes/sources at each
+    cell face.  For a node-centered FV method a dual control volume is
+    constructed around each node, enabling the residual to be formulated in an
+    edge-based fashion.  An advantage of using a node-centered FV method is that
+    it is easy to implement the boundary condition posed in \eref{bc-posed} via
+    specifying the flux (weak enforcement).  By looping over nodes on the
+    boundary with the catalytic surface, the residual can be set by
+    \begin{equation}
+      (R_k)_{ibc} = \rho D_k \frac{\partial Y_k^{(g)}}{\partial x_j} \cdot \hat{n}_j
+      - M_k \sk
+      \label{res-bc}
+    \end{equation}
+    By this weak enforcement of the catalytic boundary condition,
+    \eref{bc-posed} is satisfied as the solution of $\overline{\yk}$ converges
+    to steady state and $R_k = 0$.
+
+    Since it was previously shown that $\sk$ is a
+    function of both the gas phase and surface species concentrations, a
+    decision must be made as to how to couple updating the surface-absorbed
+    species.  In this explicit formulation, it is plausible to adopt a ``loosely
+    coupled'' approach, where the surface species are lagged and updated after
+    the gas phase species have been updated.  This introduces an added
+    explicitness to the scheme, which may impact robustness, but it is very
+    straightforward to program.  While overly simplistic, an implementation of
+    solving one iteration of this loosely coupled scheme might look like this
+    \begin{lstlisting}[language=FORTRAN, caption=Loosely Coupled Implementation]
+
+      ! Form the residual at all nodes
+      do iedge = 1, nedges
+        node1 = edge_to_node(1,iedge)
+        node2 = edge_to_node(2,iedge)
+
+        flux = get_flux(q(:,node1),q(:,node2))
+
+        residual(:,node1) = residual(:,node1) + flux
+        residual(:,node2) = residual(:,node2) - flux
+      end do
+
+      ! Set the catalytic boundary condition
+      do inode = 1, nbc_nodes
+        bc_node = get_node_on_surface(inode)
+        residual(:,bc_node) = set_catalytic_bc(q(:,bc_node), &
+                              surface_species(:,bc_node))
+      end do
+
+      ! Update the conserved (gas-phase) quantities
+      do node = 1, nnodes
+        q(:,node) = q(:,node) - dt*residual(:,node)
+      end do
+
+      ! Update the surface species concentrations
+      do inode = q, nbc_nodes
+        bc_node = get_node_on_surface(inode)
+        sdot = get_surface_source_term(q(:,bc_node))
+        surface_species(:,bc_node) = surface_species(:,bc_node) &
+                                   + sdot*dt
+      end do
+
+    \end{lstlisting}
+    In this simple illustration, the gas-phase species mass fractions (or
+    densities) are updated to the next time-level, and are in turn used to
+    compute the source term vector used to update the surface species
+    concentrations via
+    \begin{equation}
+      \cs{k}^{n+1} = \cs{k}^{n} + \left(\Delta
+      t\right)\left(\sk(\cg{k}^{(n+1)},\cs{k}^{n})\right)
+      \label{cs-update}
+    \end{equation}
+    for k=surface species.  \eref{cs-update} can also be expressed in terms of
+    surface coverage $\cs{k} = \theta_k \Gamma$
+    \begin{equation}
+      \theta_{k}^{n+1} = \theta_{k}^{n} + \left(\frac{\Delta t}{\Gamma}
+      \right)\left(\sk(\cg{k}^{(n+1)},\cs{k}^{n})\right)
+      \label{theta-update}
+    \end{equation}
+    As was previously shown, if the time variation of the surface coverage is
+    held to be zero, then $\sk = 0$ for k=surface species.  This results in an
+    algebraic expression to be solved for at the boundary nodes that will evolve
+    the gas-phase species concentrations, but not the surface species
+    concentrations.  In this case, the final step of updating the surface
+    species concentrations is not needed; however, their quantities should still
+    be stored in the routine ``\verb|set_catalytic_bc|'' that calculates the
+    boundary flux, as they are still needed to evaluate the source term $\sk$.
+
+    Determining whether the source term components sum to zero is based on
+    elemental conservation.  $\sum_{k=\text{gas species}}{\dot{w}_k}$ will only
+    be zero everywhere in the computational domain if $\sum_{k=\text{surface
+    species}}{\dot{w}_k} = 0$.  If there is production or destruction of surface
+    species, then the source terms of the gas-phase species will not sum to
+    zero, because this would violate elemental conservation. For example, the
+    absorbtion of atomic hydrogen is accounted for in the entire chemical
+    species source term, $\sum_{k=\text{all species}}{\dot{w}_k}$, but not in
+    just $\sum_{k=\text{gas species}}{\dot{w}_k}$; therefore,
+    $\sum_{k=\text{gas species}}{\dot{w}_k} \ne 0$ at the catalytic surface
+    boundary. 
+
 \end{enumerate}
+
 \end{document}
