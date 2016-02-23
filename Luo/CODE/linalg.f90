@@ -16,8 +16,10 @@ contains
 !==========================================================================80
   subroutine conjgrad(A,b,x,npoin,nsteps)
   
-  real(dp)                   :: A(npoin,npoin),rsold,rsnew,alpha,pAp
+  real(dp)                   :: rsold,rsnew,alpha,pAp
   real(dp), dimension(npoin) :: b,x,ax,r,p,Ap
+
+  real(dp), dimension(npoin,npoin) :: A
   
   integer                   :: npoin,nsteps,n,i,j
 
@@ -74,46 +76,59 @@ contains
 ! Solve the linear system via the point jacobi method
 !============================================================================80
   
-  subroutine jacobi(A,b,x,npoin,nsteps)
+  subroutine jacobi(A,b,x,npoin,nvars,neqns,nsteps,tolerance)
+
+    integer, intent(in) :: npoin, nvars, neqns, nsteps
+
+    real(dp), intent(in) :: tolerance
+
+    real(dp), dimension(neqns,npoin), intent(in)  :: b
+    real(dp), dimension(nvars,npoin), intent(out) :: x
+
+    real(dp), dimension(nvars,neqns,npoin,npoin), intent(in) :: A
   
-    real(dp)                   :: A(npoin,npoin),resnorm,dx,ad
-    real(dp), dimension(npoin) :: b,x,ax,r
+    real(dp)                   :: resnorm,dx,ad
+    real(dp), dimension(npoin) :: ax,r
     
-    integer                   :: npoin,nsteps,n,i,j
+    integer :: n,i,j,ivar,ivarx,ieq
   
   continue
   
-    x(1:npoin) = 0.0
+    x(:,:) = 0.0
     
+    write(*,"(A,4x,A)") " Iteration","L2_norm"
+
     do n=1,nsteps
     
       resnorm     = 0.0
       dx          = 0.0
       ax(1:npoin) = 0.0
+   
+      eqn_loop: do ieq = 1,neqns
+        var_loop: do ivarx = 1,nvars
+          inner_loop: do i=1,npoin
+            do j=1,npoin   
+              do ivar = 1,nvars
+                ax(i)=ax(i)+A(ivar,ieq,i,j)*x(ivar,j)
+              end do
+            end do
+          
+            r(i)    = b(ieq,i)-ax(i)
+            resnorm = resnorm + r(i)*r(i)
     
-      do i=1,npoin
-     
-        do j=1,npoin   
-          ax(i)=ax(i)+A(i,j)*x(j)
-        end do
-      
-        r(i)    = b(i)-ax(i)
-        resnorm = resnorm + r(i)*r(i)
-    
-        ad = 1/A(i,i)
-    
-        dx = r(i)*ad
-    
-        x(i)=x(i)+dx
-      
-      end do
+            ad = 1/A(ivarx,ieq,i,i)
+            dx = r(i)*ad
+            x(ivarx,i)=x(ivarx,i)+dx
+          end do inner_loop
+        end do var_loop
+      end do eqn_loop
         
-      if(sqrt(resnorm)<1.0e-05) then
+      if(sqrt(resnorm)<tolerance) then
         write(*,*) "Solution has converged at,",n,"iterations"
         exit
       end if
     
-      write(*,*)  n,sqrt(resnorm)
+      write(*,"(i6,6x,e12.5)") n, sqrt(resnorm)
     
     end do
   
@@ -166,7 +181,7 @@ contains
   
         norm=sqrt(norm)/norm0
   
-        write(*,"(i6,6x,e11.5)") k,norm
+        write(*,"(i6,6x,e12.5)") k,norm
   
         if (norm.LT.tol) then
           write(*,*) 'The solution has converged at, ',k,'iterations'
