@@ -1,15 +1,12 @@
 module test_helper
 
-  use kinddefs, only : dp
+  use kinddefs,  only : dp
+  use gridtools, only : gridtype, preprocess_grid
 
   implicit none
   public
 
-  integer :: ndimn, ntype, nelem, npoin, nface, nnode
-
-  real(dp), dimension(:,:),     allocatable :: coord, geoel, rface
-  
-  integer, dimension(:,:),  allocatable :: inpoel, bcface
+  type(gridtype) :: grid
 
   character(len=20) :: gridfile = "testgrid"
 
@@ -21,15 +18,12 @@ module test_helper
 contains
 
   subroutine setup_cube
-    use gridtools, only : readgrid_lou, basis_function, face_norm
+    integer :: nnode = 3
   continue
-    nnode = 3
+
   ! Read the grid
-    call readgrid_lou(ndimn,ntype,nelem,npoin,nface,nnode,inpoel,gridfile,       &
-                    coord,bcface)
-  ! assemble geometry related matricies
-    call basis_function(nelem,geoel,inpoel,coord)
-    call face_norm(rface,coord,bcface,nface,ndimn)
+    call preprocess_grid(grid,gridfile,nnode)
+
   end subroutine
 
 end module test_helper

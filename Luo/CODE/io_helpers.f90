@@ -1,6 +1,7 @@
 module io_helpers
 
-  use kinddefs, only : dp
+  use kinddefs,  only : dp
+  use gridtools, only : gridtype
 
   implicit none
   private
@@ -64,14 +65,11 @@ contains
 !============================ WRITE_TEC_VOLUME ==============================80
 ! Write tecplot .dat files with solution in point format for volume
 !============================================================================80
-  subroutine write_tec_volume(tec_dataname,npoin,nelem,coord,inpoel, phi,     &
-                              Vx,Vy,Vt)
+  subroutine write_tec_volume(tec_dataname,grid,phi,Vx,Vy,Vt)
 
-    integer,                 intent(in) :: npoin, nelem
-    integer, dimension(:,:), intent(in) :: inpoel
+    type(gridtype), intent(in) :: grid
 
     real(dp), dimension(:),   intent(in) :: Vx, Vy, Vt, phi
-    real(dp), dimension(:,:), intent(in) :: coord
 
     character(len=*), intent(in) :: tec_dataname
 
@@ -83,14 +81,14 @@ contains
     
     write(21,*) 'TITLE = "',trim(tec_dataname),'"'
     write(21,*) 'VARIABLES = "X" "Y" "phi" "Vx" "Vy" "Vt"'
-    write(21,*) 'ZONE NODES=',npoin,",ELEMENTS=",nelem,",DATAPACKING=POINT,",  &
-                "ZONETYPE=FETRIANGLE"
-    do i=1,npoin
-      write(21,*) coord(1,i),coord(2,i),phi(i),Vx(i),Vy(i),Vt(i)
+    write(21,*) 'ZONE NODES=',grid%npoin,",ELEMENTS=",grid%nelem,              &
+                ",DATAPACKING=POINT,","ZONETYPE=FETRIANGLE"
+    do i=1,grid%npoin
+      write(21,*) grid%coord(1,i),grid%coord(2,i),phi(i),Vx(i),Vy(i),Vt(i)
     end do
     
-    do j=1,nelem
-      write(21,*) (inpoel(i,j),i=1,3)
+    do j=1,grid%nelem
+      write(21,*) (grid%inpoel(i,j),i=1,3)
     end do
     
     close(21)
@@ -100,13 +98,11 @@ contains
 !============================ WRITE_TEC_SURFACE =============================80
 ! Write tecplot .dat files with solution in point format for surface(s)
 !============================================================================80
-  subroutine write_tec_surface(nface,bcface,coord,Vt)
+  subroutine write_tec_surface(grid,Vt)
 
-    integer,                 intent(in) :: nface
-    integer, dimension(:,:), intent(in) :: bcface
+    type(gridtype), intent(in) :: grid
 
     real(dp), dimension(:),   intent(in) :: Vt
-    real(dp), dimension(:,:), intent(in) :: coord
 
     integer :: i, ip1, ip2
 
@@ -120,25 +116,25 @@ contains
     write(16,*) 'TITLE = "Lower Surface"'
     write(16,*) 'VARIABLES = "X" "Y" "Vt"'
 
-    do i=1,nface
-      if(bcface(3,i)==2) then
-        ip1=bcface(1,i)
-        ip2=bcface(2,i)
+    do i=1,grid%nface
+      if(grid%bcface(3,i)==2) then
+        ip1=grid%bcface(1,i)
+        ip2=grid%bcface(2,i)
         
-        write(15,*) coord(1,ip1),coord(2,ip1),Vt(ip1)
-        write(15,*) coord(1,ip2),coord(2,ip2),Vt(ip2)
+        write(15,*) grid%coord(1,ip1),grid%coord(2,ip1),Vt(ip1)
+        write(15,*) grid%coord(1,ip2),grid%coord(2,ip2),Vt(ip2)
       else 
         exit
       end if
     end do
     
-    do i=1,nface
-      if(bcface(3,i)==2) then
-        ip1=bcface(1,i)
-        ip2=bcface(2,i)
+    do i=1,grid%nface
+      if(grid%bcface(3,i)==2) then
+        ip1=grid%bcface(1,i)
+        ip2=grid%bcface(2,i)
         
-        write(16,*) coord(1,ip1),coord(2,ip1),Vt(ip1)
-        write(16,*) coord(1,ip2),coord(2,ip2),Vt(ip2)
+        write(16,*) grid%coord(1,ip1),grid%coord(2,ip1),Vt(ip1)
+        write(16,*) grid%coord(1,ip2),grid%coord(2,ip2),Vt(ip2)
       end if
     end do
 

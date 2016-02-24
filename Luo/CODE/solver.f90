@@ -1,6 +1,8 @@
 module solver
 
-  use kinddefs, only : dp
+  use kinddefs,  only : dp
+  use gridtools, only : gridtype
+
 
   implicit none
   private
@@ -19,15 +21,16 @@ contains
 !============================= GET_RHSPO ====================================80
 ! Formulate the RHS load vector with neumann BC's
 !============================================================================80
-  function get_rhspo(bcface,rface,nface,ndof,uinf,vinf) result(rhspo)
-  
-    integer,                 intent(in) :: nface,ndof
-    integer, dimension(:,:), intent(in) :: bcface
-  
-    real(dp), dimension(:,:), intent(in) :: rface
-    real(dp),                 intent(in) :: uinf,vinf
+  function get_rhspo(grid,ndof,uinf,vinf) result(rhspo)
+
+    type(gridtype), intent(in) :: grid
+
+    integer, intent(in) :: ndof
+
+    real(dp), intent(in) :: uinf,vinf
   
     real(dp), dimension(ndof) :: rhspo
+
     real(dp) :: cface
 
     integer :: ip1, ip2, iface
@@ -36,13 +39,13 @@ contains
   
     rhspo = zero
     
-    do iface=1,nface
-      if(bcface(3,iface) == 4) then
+    do iface=1,grid%nface
+      if(grid%bcface(3,iface) == 4) then
         
-        ip1   = bcface(1,iface)
-        ip2   = bcface(2,iface)
+        ip1 = grid%bcface(1,iface)
+        ip2 = grid%bcface(2,iface)
         
-        cface = 0.5_dp*(uinf*rface(1,iface) + vinf*rface(2,iface))
+        cface = 0.5_dp*(uinf*grid%rface(1,iface) + vinf*grid%rface(2,iface))
     
         rhspo(ip1) = rhspo(ip1) + cface
         rhspo(ip2) = rhspo(ip2) + cface
@@ -56,48 +59,51 @@ contains
 ! Form the global stiffness matrix
 !============================================================================80
 
-  function get_lhspo(ndof,nelem,nnode,npoin,inpoel,geoel) result (lhspo)
+  function get_lhspo(grid,ndof) result (lhspo)
 
-    integer, intent(in) :: ndof, nelem, nnode, npoin
-    integer,  dimension(:,:), intent(in) :: inpoel
-    real(dp), dimension(:,:), intent(in) :: geoel
+    integer, intent(in) :: ndof
+
+    type(gridtype), intent(in) :: grid
 
     real(dp), dimension(ndof,ndof) :: lhspo
 
     real(dp), dimension(3) :: bx, by
 
-    real(dp) :: area
+    real(dp) :: area, D
 
     integer :: ielem, ip1, ip2,ip3
     integer :: i, ip, j, jp
+
+    real(dp), parameter :: fact = one/12._dp
 
   continue
 
   lhspo(1:ndof,1:ndof) = 0.0
 
-    do ielem=1,nelem
+    do ielem=1,grid%nelem
 
-      ip1   = inpoel(1,ielem)
-      ip2   = inpoel(2,ielem)
-      ip3   = inpoel(3,ielem)
+      ip1   = grid%inpoel(1,ielem)
+      ip2   = grid%inpoel(2,ielem)
+      ip3   = grid%inpoel(3,ielem)
 
-      bx(1) = geoel(1,ielem)
-      bx(2) = geoel(2,ielem)
+      bx(1) = grid%geoel(1,ielem)
+      bx(2) = grid%geoel(2,ielem)
       bx(3) = -(bx(1)+bx(2))
-      by(1) = geoel(3,ielem)
-      by(2) = geoel(4,ielem)
+      by(1) = grid%geoel(3,ielem)
+      by(2) = grid%geoel(4,ielem)
       by(3) = -(by(1)+by(2))
 
-      area = half*geoel(5,ielem)
+      D = grid%geoel(5,ielem)
+      area = half*D
 
-      do i=1,nnode
-        ip = inpoel(i,ielem)
-        do j=1,nnode
-          jp = inpoel(j,ielem)
+      do i=1,grid%nnode
+        ip = grid%inpoel(i,ielem)
+        do j=1,grid%nnode
+          jp = grid%inpoel(j,ielem)
           lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
-          lhspo(ip,jp+npoin) = one
+          lhspo(ip,jp+grid%npoin) = fact*(bx(j) + by(j))*D**2
         end do
-          lhspo(ip+npoin,ip+npoin) = one
+        lhspo(ip+grid%npoin,ip+grid%npoin) = one
       end do
 
     end do
@@ -108,17 +114,15 @@ contains
 ! Calculate velocities Vx, Vy, and Vt by interpolating solution to nodes
 !============================================================================80
 
-  subroutine get_soln(Vx,Vy,Vt,phi,geoel,inpoel,npoin,nelem)
+  subroutine get_soln(Vx,Vy,Vt,phi,grid)
 
-    integer,                  intent(in) :: npoin,nelem
-    integer, dimension(:,:),  intent(in) :: inpoel
+    type(gridtype), intent(in) :: grid
 
-    real(dp), dimension(:,:), intent(in)  :: geoel
     real(dp), dimension(:),   intent(in)  :: phi
     real(dp), dimension(:),   intent(out) :: Vx, Vy, Vt
 
-    real(dp), dimension(nelem) :: Vx_local, Vy_local
-    real(dp), dimension(npoin) :: Vxarea, Vyarea, area
+    real(dp), dimension(grid%nelem) :: Vx_local, Vy_local
+    real(dp), dimension(grid%npoin) :: Vxarea, Vyarea, area
 
     integer :: ielem, ipoin, ip1, ip2, ip3
 
@@ -126,23 +130,25 @@ contains
 
   continue
 
-    Vx_local(1:nelem) = zero
-    Vy_local(1:nelem) = zero
-    Vxarea(1:npoin)   = zero
-    Vyarea(1:npoin)   = zero
-    area(1:npoin)     = zero
+    Vx_local = zero
+    Vy_local = zero
+    Vxarea   = zero
+    Vyarea   = zero
+    area     = zero
 
-    do ielem=1,nelem
+    do ielem=1,grid%nelem
 
-      ip1=inpoel(1,ielem)
-      ip2=inpoel(2,ielem)
-      ip3=inpoel(3,ielem)
+      ip1=grid%inpoel(1,ielem)
+      ip2=grid%inpoel(2,ielem)
+      ip3=grid%inpoel(3,ielem)
 
-      Vx_local(ielem) = (geoel(1,ielem)*(phi(ip1)-phi(ip3))       &
-                       + geoel(2,ielem)*(phi(ip2)-phi(ip3)))*geoel(5,ielem)
+      Vx_local(ielem) = (grid%geoel(1,ielem)*(phi(ip1)-phi(ip3))       &
+                       + grid%geoel(2,ielem)*(phi(ip2)-phi(ip3)))      &
+                       * grid%geoel(5,ielem)
 
-      Vy_local(ielem) = (geoel(3,ielem)*(phi(ip1)-phi(ip3))       &
-                       + geoel(4,ielem)*(phi(ip2)-phi(ip3)))*geoel(5,ielem)
+      Vy_local(ielem) = (grid%geoel(3,ielem)*(phi(ip1)-phi(ip3))       &
+                       + grid%geoel(4,ielem)*(phi(ip2)-phi(ip3)))      &
+                       * grid%geoel(5,ielem)
 
       Vxarea(ip1) = Vxarea(ip1)+Vx_local(ielem)
       Vxarea(ip2) = Vxarea(ip2)+Vx_local(ielem)
@@ -152,13 +158,13 @@ contains
       Vyarea(ip2) = Vyarea(ip2)+Vy_local(ielem)
       Vyarea(ip3) = Vyarea(ip3)+Vy_local(ielem)
 
-      area(ip1)  = area(ip1)+geoel(5,ielem)
-      area(ip2)  = area(ip2)+geoel(5,ielem)
-      area(ip3)  = area(ip3)+geoel(5,ielem)
+      area(ip1)  = area(ip1)+grid%geoel(5,ielem)
+      area(ip2)  = area(ip2)+grid%geoel(5,ielem)
+      area(ip3)  = area(ip3)+grid%geoel(5,ielem)
 
     end do
 
-    do ipoin=1,npoin
+    do ipoin=1,grid%npoin
 
       Vx(ipoin) = Vxarea(ipoin)/area(ipoin)
       Vy(ipoin) = Vyarea(ipoin)/area(ipoin)
