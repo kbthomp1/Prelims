@@ -13,5 +13,5 @@
   !lin_solver = "gauss seidel"
   lin_solver = "point jacobi"
 
-  tec_dataname = "channel.dat"
+  tec_dataname = "output.dat"
 /

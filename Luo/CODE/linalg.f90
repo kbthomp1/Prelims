@@ -9,6 +9,9 @@ module linalg
   public :: jacobi
   public :: gauss_seidel
 
+  real(dp), parameter :: zero = 0.0_dp
+  real(dp), parameter :: one  = 1.0_dp
+
 contains
 
 !================================= CONJGRAD ===============================80
@@ -87,9 +90,10 @@ contains
 
     real(dp), dimension(nvars,neqns,npoin,npoin), intent(in) :: A
   
-    real(dp)                   :: resnorm,dx,ad
-    real(dp), dimension(npoin) :: ax,r
-    
+    real(dp), dimension(nvars,npoin) :: xnew
+
+    real(dp) :: resnorm,dx,ad,ax,r
+
     integer :: n,i,j,ivar,ivarx,ieq
   
   continue
@@ -100,28 +104,31 @@ contains
 
     do n=1,nsteps
     
-      resnorm     = 0.0
-      dx          = 0.0
-      ax(1:npoin) = 0.0
+      resnorm     = zero
+      dx          = zero
    
       eqn_loop: do ieq = 1,neqns
         var_loop: do ivarx = 1,nvars
           inner_loop: do i=1,npoin
+            ax = zero
             do j=1,npoin   
               do ivar = 1,nvars
-                ax(i)=ax(i)+A(ivar,ieq,i,j)*x(ivar,j)
+                ax = ax + A(ivar,ieq,i,j)*x(ivar,j)
               end do
             end do
-          
-            r(i)    = b(ieq,i)-ax(i)
-            resnorm = resnorm + r(i)*r(i)
+         
+            ! Get residual
+            r = b(ieq,i)-ax
+            resnorm = resnorm + r**2
+
+            r = b(ieq,i) - (ax-A(ivarx,ieq,i,i)*x(ivarx,i))
     
-            ad = 1/A(ivarx,ieq,i,i)
-            dx = r(i)*ad
-            x(ivarx,i)=x(ivarx,i)+dx
+            xnew(ivarx,i) = r/A(ivarx,ieq,i,i)
           end do inner_loop
         end do var_loop
       end do eqn_loop
+
+      x = xnew
         
       if(sqrt(resnorm)<tolerance) then
         write(*,*) "Solution has converged at,",n,"iterations"
