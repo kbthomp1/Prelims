@@ -13,6 +13,11 @@ module test_helper
 
   character(len=20) :: gridfile = "testgrid"
 
+  real(dp), parameter :: zero = 0.0_dp
+  real(dp), parameter :: half = 0.5_dp
+  real(dp), parameter :: one  = 1.0_dp
+  real(dp), parameter :: two  = 2.0_dp
+
 contains
 
   subroutine setup_cube
