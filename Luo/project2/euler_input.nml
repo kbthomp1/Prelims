@@ -1,0 +1,35 @@
+&euler_input
+  gridfile = "../GRIDS/fine.grid"
+
+  neqn   = 4
+  ndegr  = 3
+  scheme = 2  !1=1st order 2=least squares 3=green-gauss
+
+  vinf   = 1.0  !  
+  rhoinf = 1.0  ! Initial Conditions
+  minf   = 0.38 !
+
+  alpha  = 0
+
+  nsteps = 1000 !Debug must be on. Controls number of timesteps run.
+  nstag  = 3    !number of stages for the R-K Time Integration
+
+  cfl    = 0.8
+  
+  tstep  = "local" !time stepping: local or global
+  pout   = 500     !controls the number of iterations between screen printouts
+
+  g = 1.4d0 !ratio of specific heats (gamma)
+
+  tolerance    = 1.0e-4
+
+  tec_dataname     = "OUTPUT/test"
+  surface_dataname = "OUTPUT/surface"
+  residname        = "resid.dat"
+
+  animation      = 2    !1=On 2=Off
+  animation_freq = 100  !controls how often a restart file is written
+
+  debug = "Off"  !"On" turns on nsteps
+/
+/
