@@ -467,7 +467,7 @@ contains
     
       del(1,iface)=y2-y1
       del(2,iface)=-(x2-x1)
-      del(3,iface)=sqrt(del(1,iface)**2.0+del(2,iface)**2.0)
+      del(3,iface)=sqrt(del(1,iface)**2+del(2,iface)**2)
     
     end do
   
