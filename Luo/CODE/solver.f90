@@ -7,7 +7,6 @@ module solver
 
   public :: get_lhspo
   public :: get_rhspo
-  public :: set_bc
   public :: get_soln
   public :: solve
 
@@ -17,7 +16,7 @@ module solver
 contains
 
 !============================= GET_RHSPO ====================================80
-! Formulate the RHS load vector
+! Formulate the RHS load vector with neumann BC's
 !============================================================================80
   function get_rhspo(bcface,rface,nface,npoin,neqns,uinf,vinf) result(rhspo)
   
@@ -102,33 +101,6 @@ contains
     end do
 
   end function get_lhspo
-
-!=========================== SET_BC =========================================80
-! Set the Dirchlet boundary condition
-!============================================================================80
-  subroutine set_bc(phi,lhspo,rhspo,npoin,nvars,bcface)
-
-    integer,                 intent(in) :: npoin, nvars
-    integer, dimension(:,:), intent(in) :: bcface
-
-    real(dp), dimension(nvars,npoin),   intent(out)   :: phi
-    real(dp), dimension(:,:,:,:),       intent(inout) :: lhspo
-    real(dp), dimension(:,:),           intent(inout) :: rhspo
-
-    real(dp), parameter :: phi_ib = 1.0_dp
-
-    integer :: ib
-
-  continue
-
-    phi(1:nvars,1:npoin) = 0.0_dp
-
-    ib = bcface(1,1)
-
-    lhspo(1,1,ib,ib) = lhspo(1,1,ib,ib)*1.0e+20_dp
-    rhspo(1,ib)    = lhspo(1,1,ib,ib)*phi_ib
-
-  end subroutine
 
 !============================ GET_SOLN ======================================80
 ! Calculate velocities Vx, Vy, and Vt by interpolating solution to nodes

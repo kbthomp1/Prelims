@@ -9,7 +9,7 @@ test check_lhspo
 
   use test_helper
 
-  real(dp), dimension(:,:),     allocatable :: rhspo, phi
+  real(dp), dimension(:,:),     allocatable :: rhspo
   real(dp), dimension(:,:,:,:), allocatable :: lhspo
 
   integer :: nvars, neqns, i, j

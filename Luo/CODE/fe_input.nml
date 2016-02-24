@@ -1,6 +1,6 @@
 &fe_input
   !gridfile = "testgrid"
-  !gridfile = "channel.grid"
+  gridfile = "channel.grid"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
   nvars    = 1  !number of unknowns to solve for
   neqns    = 1  !number of equations

@@ -2,7 +2,7 @@ program main
 
   use kinddefs,      only : dp
   use gridtools,     only : readgrid_lou, basis_function, face_norm
-  use solver,        only : get_lhspo, get_rhspo, set_bc, get_soln, solve
+  use solver,        only : get_lhspo, get_rhspo, get_soln, solve
   use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist
   use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps,   &
                             nvars, neqns, tec_dataname, lin_solver, tolerance
@@ -44,8 +44,6 @@ continue
 ! Formulate the stiffness matrix (LHS)
   lhspo = get_lhspo(npoin,nelem,nnode,nvars,neqns,inpoel,geoel)
    
-  call set_bc(phi,lhspo,rhspo,npoin,nvars,bcface)
-  
   call solve(lin_solver,lhspo,rhspo,phi,npoin,nvars,neqns,nsteps,tolerance)
   
   call get_soln(Vx,Vy,Vt,phi,geoel,inpoel,npoin,nelem)
