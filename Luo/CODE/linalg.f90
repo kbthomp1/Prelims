@@ -90,9 +90,9 @@ contains
 
     real(dp), dimension(ndof,ndof), intent(in) :: A
   
-    real(dp), dimension(ndof) :: xnew
+    real(dp), dimension(ndof) :: xnew, ax
 
-    real(dp) :: resnorm,ax,r
+    real(dp) :: resnorm, r
 
     integer :: n,i,j
   
@@ -105,19 +105,18 @@ contains
     do n=1,nsteps
     
       resnorm = zero
-   
-      do i=1,ndof
-        ax = zero
-        do j=1,ndof   
-          ax = ax + A(i,j)*x(j)
-        end do
-      
-        ! Get residual
-        r = b(i)-ax
-        resnorm = resnorm + r**2
+      ax      = zero
 
-        r = b(i) - (ax-A(i,i)*x(i))
-    
+      do j=1,ndof
+        do i=1,ndof   
+          ax(i) = ax(i) + A(i,j)*x(j)
+        end do
+      end do
+      
+      do i = 1,ndof
+        r = b(i) - ax(i)
+        resnorm = resnorm + r**2
+        r = r+A(i,i)*x(i)
         xnew(i) = r/A(i,i)
       end do
 

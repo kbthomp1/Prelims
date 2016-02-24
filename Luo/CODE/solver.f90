@@ -10,6 +10,7 @@ module solver
   public :: get_soln
   public :: solve
 
+  real(dp), parameter :: zero = 0.0_dp
   real(dp), parameter :: half = 0.5_dp
   real(dp), parameter :: one  = 1.0_dp
 
@@ -18,22 +19,22 @@ contains
 !============================= GET_RHSPO ====================================80
 ! Formulate the RHS load vector with neumann BC's
 !============================================================================80
-  function get_rhspo(bcface,rface,nface,npoin,neqns,uinf,vinf) result(rhspo)
+  function get_rhspo(bcface,rface,nface,ndof,uinf,vinf) result(rhspo)
   
-    integer,                 intent(in) :: nface,npoin,neqns
+    integer,                 intent(in) :: nface,ndof
     integer, dimension(:,:), intent(in) :: bcface
   
     real(dp), dimension(:,:), intent(in) :: rface
     real(dp),                 intent(in) :: uinf,vinf
   
-    real(dp), dimension(neqns,npoin) :: rhspo
+    real(dp), dimension(ndof) :: rhspo
     real(dp) :: cface
 
     integer :: ip1, ip2, iface
     
   continue 
   
-    rhspo(1:neqns,1:npoin) = 0.0
+    rhspo = zero
     
     do iface=1,nface
       if(bcface(3,iface) == 4) then
@@ -43,8 +44,8 @@ contains
         
         cface = 0.5_dp*(uinf*rface(1,iface) + vinf*rface(2,iface))
     
-        rhspo(1,ip1) = rhspo(1,ip1) + cface
-        rhspo(1,ip2) = rhspo(1,ip2) + cface
+        rhspo(ip1) = rhspo(ip1) + cface
+        rhspo(ip2) = rhspo(ip2) + cface
     
       end if
     end do
@@ -94,9 +95,9 @@ contains
         do j=1,nnode
           jp = inpoel(j,ielem)
           lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
-          lhspo(ip,jp+npoin) = 1._dp
+          lhspo(ip,jp+npoin) = one
         end do
-          lhspo(ip+npoin,ip+npoin) = 1._dp
+          lhspo(ip+npoin,ip+npoin) = one
       end do
 
     end do
@@ -113,7 +114,7 @@ contains
     integer, dimension(:,:),  intent(in) :: inpoel
 
     real(dp), dimension(:,:), intent(in)  :: geoel
-    real(dp), dimension(:,:), intent(in)  :: phi
+    real(dp), dimension(:),   intent(in)  :: phi
     real(dp), dimension(:),   intent(out) :: Vx, Vy, Vt
 
     real(dp), dimension(nelem) :: Vx_local, Vy_local
@@ -137,11 +138,11 @@ contains
       ip2=inpoel(2,ielem)
       ip3=inpoel(3,ielem)
 
-      Vx_local(ielem) = (geoel(1,ielem)*(phi(1,ip1)-phi(1,ip3))       &
-                       + geoel(2,ielem)*(phi(1,ip2)-phi(1,ip3)))*geoel(5,ielem)
+      Vx_local(ielem) = (geoel(1,ielem)*(phi(ip1)-phi(ip3))       &
+                       + geoel(2,ielem)*(phi(ip2)-phi(ip3)))*geoel(5,ielem)
 
-      Vy_local(ielem) = (geoel(3,ielem)*(phi(1,ip1)-phi(1,ip3))       &
-                       + geoel(4,ielem)*(phi(1,ip2)-phi(1,ip3)))*geoel(5,ielem)
+      Vy_local(ielem) = (geoel(3,ielem)*(phi(ip1)-phi(ip3))       &
+                       + geoel(4,ielem)*(phi(ip2)-phi(ip3)))*geoel(5,ielem)
 
       Vxarea(ip1) = Vxarea(ip1)+Vx_local(ielem)
       Vxarea(ip2) = Vxarea(ip2)+Vx_local(ielem)

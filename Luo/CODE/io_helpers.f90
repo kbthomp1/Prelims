@@ -70,8 +70,8 @@ contains
     integer,                 intent(in) :: npoin, nelem
     integer, dimension(:,:), intent(in) :: inpoel
 
-    real(dp), dimension(:),   intent(in) :: Vx, Vy, Vt
-    real(dp), dimension(:,:), intent(in) :: coord, phi
+    real(dp), dimension(:),   intent(in) :: Vx, Vy, Vt, phi
+    real(dp), dimension(:,:), intent(in) :: coord
 
     character(len=*), intent(in) :: tec_dataname
 
@@ -86,7 +86,7 @@ contains
     write(21,*) 'ZONE NODES=',npoin,",ELEMENTS=",nelem,",DATAPACKING=POINT,",  &
                 "ZONETYPE=FETRIANGLE"
     do i=1,npoin
-      write(21,*) coord(1,i),coord(2,i),phi(1,i),Vx(i),Vy(i),Vt(i)
+      write(21,*) coord(1,i),coord(2,i),phi(i),Vx(i),Vy(i),Vt(i)
     end do
     
     do j=1,nelem
