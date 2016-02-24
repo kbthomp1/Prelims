@@ -79,63 +79,56 @@ contains
 ! Solve the linear system via the point jacobi method
 !============================================================================80
   
-  subroutine jacobi(A,b,x,npoin,nvars,neqns,nsteps,tolerance)
+  subroutine jacobi(A,b,x,ndof,nsteps,tolerance)
 
-    integer, intent(in) :: npoin, nvars, neqns, nsteps
+    integer, intent(in) :: ndof, nsteps
 
     real(dp), intent(in) :: tolerance
 
-    real(dp), dimension(neqns,npoin), intent(in)  :: b
-    real(dp), dimension(nvars,npoin), intent(out) :: x
+    real(dp), dimension(ndof), intent(in)  :: b
+    real(dp), dimension(ndof), intent(out) :: x
 
-    real(dp), dimension(nvars,neqns,npoin,npoin), intent(in) :: A
+    real(dp), dimension(ndof,ndof), intent(in) :: A
   
-    real(dp), dimension(nvars,npoin) :: xnew
+    real(dp), dimension(ndof) :: xnew
 
-    real(dp) :: resnorm,dx,ad,ax,r
+    real(dp) :: resnorm,ax,r
 
-    integer :: n,i,j,ivar,ivarx,ieq
+    integer :: n,i,j
   
   continue
   
-    x(:,:) = 0.0
+    x = zero
     
     write(*,"(A,4x,A)") " Iteration","L2_norm"
 
     do n=1,nsteps
     
-      resnorm     = zero
-      dx          = zero
+      resnorm = zero
    
-      eqn_loop: do ieq = 1,neqns
-        var_loop: do ivarx = 1,nvars
-          inner_loop: do i=1,npoin
-            ax = zero
-            do j=1,npoin   
-              do ivar = 1,nvars
-                ax = ax + A(ivar,ieq,i,j)*x(ivar,j)
-              end do
-            end do
-         
-            ! Get residual
-            r = b(ieq,i)-ax
-            resnorm = resnorm + r**2
+      do i=1,ndof
+        ax = zero
+        do j=1,ndof   
+          ax = ax + A(i,j)*x(j)
+        end do
+      
+        ! Get residual
+        r = b(i)-ax
+        resnorm = resnorm + r**2
 
-            r = b(ieq,i) - (ax-A(ivarx,ieq,i,i)*x(ivarx,i))
+        r = b(i) - (ax-A(i,i)*x(i))
     
-            xnew(ivarx,i) = r/A(ivarx,ieq,i,i)
-          end do inner_loop
-        end do var_loop
-      end do eqn_loop
+        xnew(i) = r/A(i,i)
+      end do
 
       x = xnew
         
+      write(*,"(i6,6x,e12.5)") n, sqrt(resnorm)
+    
       if(sqrt(resnorm)<tolerance) then
         write(*,*) "Solution has converged at,",n,"iterations"
         exit
       end if
-    
-      write(*,"(i6,6x,e12.5)") n, sqrt(resnorm)
     
     end do
   

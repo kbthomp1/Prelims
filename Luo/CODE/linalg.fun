@@ -2,56 +2,51 @@ test_suite linalg
 
   integer, parameter :: dp = selected_real_kind(P=15)
 
-  real(dp), parameter :: zero = 0.0_dp
-  real(dp), parameter :: half = 0.5_dp
-  real(dp), parameter :: one  = 1.0_dp
-
 test jacobi_solve
 
-  integer, parameter :: nvars  = 1
-  integer, parameter :: neqns  = 1
-  integer, parameter :: npoin  = 3
-  integer, parameter :: nsteps = 3
-  
-  real(dp), parameter :: tolerance = 1.e-20_dp
-  
-  real(dp), dimension(neqns,npoin) :: b
-  real(dp), dimension(nvars,npoin) :: x
-  
-  real(dp), dimension(nvars,neqns,npoin,npoin) :: A
+  use test_helper
 
-  real(dp), dimension(npoin,npoin) :: identity
+  real(dp), dimension(:),   allocatable :: rhspo, phi, exact
+  real(dp), dimension(:,:), allocatable :: lhspo
 
-  integer :: i, j
+  real(dp) :: tolerance = 1.E-5_dp
+
+  integer :: ndof, i, j, nsteps
 
 continue
 
-  identity = zero
-  do i = 1,npoin
-    identity(i,i) = one
+  call setup_cube
+  ndof = 2*npoin
+  allocate(lhspo(ndof,ndof))
+  allocate(rhspo(ndof))
+  allocate(phi(ndof))
+  allocate(exact(ndof))
+
+  exact = zero
+  exact(1:npoin) = [rand(1),rand(2),rand(3),rand(4)]
+
+  lhspo = zero
+  do i = 1, ndof
+    lhspo(i,i) = real(i,dp)
+    !write(*,20) "CHECK: lhspo = ",(lhspo(i,j), j=1,ndof)
   end do
 
-  do i = 1,nvars
-    do j = 1,neqns
-      A(i,j,:,:) = 2.0_dp*identity
-    end do
+  rhspo = zero
+  do i = 1, ndof
+    rhspo(i) = sum(lhspo(i,:)*exact(:))
+    !write(*,*) "CHECK: rhs = ",rhspo(i)
   end do
 
-  do i = 1, neqns
-    do j = 1, npoin
-      b(i,j) = real(i,dp)*real(j,dp)
-      write(*,*) "CHECK: b = ",b(i,j)
-    end do
+  nsteps = 4
+  call jacobi(lhspo,rhspo,phi,ndof,nsteps,tolerance)
+
+  do i = 1, ndof
+    assert_equal(phi(i),exact(i))
+    write(*,30) "CHECK: phi=exact =>",phi(i),"=",exact(i)
   end do
 
-  call jacobi(A,b,x,npoin,nvars,neqns,nsteps,tolerance)
-
-  do i = 1, nvars
-    do j = 1, npoin
-      assert_equal(x(i,j),half*b(i,j))
-      write(*,"(2(a,g11.3))") "CHECK: x = b => ",x(i,j), "=",b(i,j)
-    end do
-  end do
+20 format(A,300g11.4)
+30 format(2(a,g11.3))
 
 end test
 

@@ -55,13 +55,13 @@ contains
 ! Form the global stiffness matrix
 !============================================================================80
 
-  function get_lhspo(npoin,nelem,nnode,nvars,neqns,inpoel,geoel) result (lhspo)
+  function get_lhspo(ndof,nelem,nnode,npoin,inpoel,geoel) result (lhspo)
 
-    integer, intent(in) :: npoin, nelem, nnode, nvars, neqns
+    integer, intent(in) :: ndof, nelem, nnode, npoin
     integer,  dimension(:,:), intent(in) :: inpoel
     real(dp), dimension(:,:), intent(in) :: geoel
 
-    real(dp), dimension(nvars,neqns,npoin,npoin) :: lhspo
+    real(dp), dimension(ndof,ndof) :: lhspo
 
     real(dp), dimension(3) :: bx, by
 
@@ -72,7 +72,7 @@ contains
 
   continue
 
-    lhspo(1:nvars,1:neqns,1:npoin,1:npoin) = 0.0
+  lhspo(1:ndof,1:ndof) = 0.0
 
     do ielem=1,nelem
 
@@ -93,9 +93,10 @@ contains
         ip = inpoel(i,ielem)
         do j=1,nnode
           jp = inpoel(j,ielem)
-          lhspo(1,1,ip,jp) = lhspo(1,1,ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
+          lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
+          lhspo(ip,jp+npoin) = 1._dp
         end do
-        !lhspo(2,2,ip,ip) = one
+          lhspo(ip+npoin,ip+npoin) = 1._dp
       end do
 
     end do
@@ -169,35 +170,29 @@ contains
 !============================== SOLVE =======================================80
 ! Solve the linear system per user's specified method
 !============================================================================80
-  subroutine solve(lin_solver,lhspo,rhspo,phi,npoin,nvars,neqns,nsteps,tolerance)
+  subroutine solve(lin_solver,lhspo,rhspo,phi,ndof,nsteps,tolerance)
 
     use linalg, only : gauss_seidel,jacobi,conjgrad
 
     character(len=*), intent(in) :: lin_solver
 
-    integer, intent(in) :: npoin, nsteps, nvars, neqns
+    integer, intent(in) :: nsteps, ndof
 
-    real(dp), dimension(neqns,npoin),             intent(in)    :: rhspo
-    real(dp), dimension(nvars,npoin),             intent(inout) :: phi
-    real(dp), dimension(nvars,neqns,npoin,npoin), intent(in)    :: lhspo
-
-    real(dp), dimension(npoin)       :: b, x
-    real(dp), dimension(npoin,npoin) :: A
+    real(dp), dimension(ndof),      intent(in)    :: rhspo
+    real(dp), dimension(ndof),      intent(inout) :: phi
+    real(dp), dimension(ndof,ndof), intent(in)    :: lhspo
 
     real(dp), intent(in) :: tolerance
 
   continue
 
-    A = lhspo(1,1,:,:)
-    b = rhspo(1,:)
-
     select case(lin_solver)
     case("conjugate gradient")
-      call conjgrad(A,b,x,npoin,nsteps)
+      call conjgrad(lhspo,rhspo,phi,ndof,nsteps)
     case("point jacobi")
-      call jacobi(lhspo,rhspo,phi,npoin,nvars,neqns,nsteps,tolerance)
+      call jacobi(lhspo,rhspo,phi,ndof,nsteps,tolerance)
     case("gauss seidel")
-      call gauss_seidel(A,b,x,npoin,nsteps,tolerance)
+      call gauss_seidel(lhspo,rhspo,phi,ndof,nsteps,tolerance)
     case default
       write(*,*) "Error: linear solver specified not available:",lin_solver
       stop 1

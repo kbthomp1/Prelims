@@ -12,9 +12,9 @@ program main
   
   real(dp), dimension(:),   allocatable :: Vx, Vy, Vt
   
-  real(dp), dimension(:,:),     allocatable :: coord, geoel, rface
-  real(dp), dimension(:,:),     allocatable :: rhspo, phi
-  real(dp), dimension(:,:,:,:), allocatable :: lhspo
+  real(dp), dimension(:,:), allocatable :: coord, geoel, rface
+  real(dp), dimension(:),   allocatable :: rhspo, phi
+  real(dp), dimension(:),   allocatable :: lhspo
   
   integer, dimension(:,:),  allocatable :: inpoel, bcface
 
