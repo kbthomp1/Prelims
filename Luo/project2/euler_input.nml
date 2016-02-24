@@ -1,5 +1,5 @@
 &euler_input
-  gridfile = "../GRIDS/fine.grid"
+  gridfile = "channel.grid"
 
   neqn   = 4
   ndegr  = 3
