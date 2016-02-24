@@ -11,6 +11,9 @@ module solver
   public :: get_soln
   public :: solve
 
+  real(dp), parameter :: half = 0.5_dp
+  real(dp), parameter :: one  = 1.0_dp
+
 contains
 
 !============================= GET_RHSPO ====================================80
@@ -85,7 +88,7 @@ contains
       by(2) = geoel(4,ielem)
       by(3) = -(by(1)+by(2))
 
-      area = 0.5*geoel(5,ielem)
+      area = half*geoel(5,ielem)
 
       do i=1,nnode
         ip = inpoel(i,ielem)
@@ -93,6 +96,7 @@ contains
           jp = inpoel(j,ielem)
           lhspo(1,1,ip,jp) = lhspo(1,1,ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
         end do
+        !lhspo(2,2,ip,ip) = one
       end do
 
     end do
@@ -219,7 +223,7 @@ contains
     case("conjugate gradient")
       call conjgrad(A,b,x,npoin,nsteps)
     case("point jacobi")
-      call jacobi(lhspo,rhspo,x,npoin,nvars,neqns,nsteps,tolerance)
+      call jacobi(lhspo,rhspo,phi,npoin,nvars,neqns,nsteps,tolerance)
     case("gauss seidel")
       call gauss_seidel(A,b,x,npoin,nsteps,tolerance)
     case default
@@ -227,7 +231,7 @@ contains
       stop 1
     end select
 
-    phi(1,:) = x
+    !phi(1,:) = x
 
   end subroutine solve
 

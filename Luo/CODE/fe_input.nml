@@ -1,5 +1,5 @@
 &fe_input
-  gridfile = "gridfile"
+  gridfile = "testgrid"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
   nvars    = 1  !number of unknowns to solve for
   neqns    = 1  !number of equations

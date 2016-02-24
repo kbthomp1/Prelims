@@ -3,18 +3,8 @@
 # Watches a Fortran source file (*.[fF]90) and its corresponding
 # unit test (*.fun), and runs unit test with Funit if either changes.
 
-host=`hostname`
-
-#Load modules containing funit and ifort on K and cypher
-if [[ $host = "K"* ]] ; then
-  . /usr/local/pkgs/modules/init/bash
-  module load ruby_2.0.0_p247
-  module load intel_2013.4.183
-elif [[ $host = "cypher"* ]] ; then
-  . /usr/local/pkgs/modules/init/bash
-  module load ruby_2.0.0_p247
-  module load intel_2013.4.183
-fi
+export CC=gcc \
+       CXX=g++
 
 funit_exec=funit
 
@@ -23,9 +13,6 @@ if [ ! "$(${funit_exec} --version 2>/dev/null)" ]; then
   echo \ \ sudo gem install ${funit_exec}
   exit 1
 fi
-
-fortran_dirs="-s ../libcore -s ../libdefs -s ../libinit -s ../PHYSICS_MODULES -s ../FuncLib90 -s ../libturb -s ../libddfb -s ../PHYSICS_DEPS -s ../LibF90"
-c_dirs="-l ../libbc/enginesim -l ../libddfb"
 
 run_funit(){
   #env FC=ifort \
@@ -37,12 +24,12 @@ run_funit(){
       CC=gcc \
       CXX=g++ \
       MAKE_OPTS='-j' \
-    ${funit_exec} ${fortran_dirs} ${c_dirs} $1
+    ${funit_exec} $1
 }
 
 trap \
-  "${funit_exec} ${c_dirs} --clean; \
-   rm -f *.{o,mod,MOD} ../{libcore,libdefs,libinit,libturb,PHYSICS_MODULES,FuncLib90,PHYSICS_DEPS}/*.{o,mod,MOD}; \
+  "${funit_exec} --clean; \
+   rm -f *.{o,mod,MOD} 
    exit" \
   INT
 
