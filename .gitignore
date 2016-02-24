@@ -4,4 +4,5 @@
 *.o
 *.mod
 *.d
+tecplot.phy
 main

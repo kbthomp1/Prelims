@@ -1,13 +1,14 @@
 &fe_input
-  gridfile = "testgrid"
+  !gridfile = "testgrid"
+  !gridfile = "channel.grid"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
   nvars    = 1  !number of unknowns to solve for
   neqns    = 1  !number of equations
   uinf     = 1.0
   vinf     = 0.0
   
-  nsteps    = 500
-  tolerance = 1.E-01
+  nsteps    = 5000
+  tolerance = 1.E-05
 
   !lin_solver = "gauss seidel"
   lin_solver = "point jacobi"

@@ -24,7 +24,7 @@ run_funit(){
       CC=gcc \
       CXX=g++ \
       MAKE_OPTS='-j' \
-    ${funit_exec} $1
+      ${funit_exec} -s ./unit_tests $1
 }
 
 trap \

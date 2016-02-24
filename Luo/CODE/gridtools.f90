@@ -24,7 +24,7 @@ contains
     
     integer, dimension(:,:), allocatable :: inpoel,bcface
     
-    character(len=100) :: gridfile
+    character(len=*) :: gridfile
 
   continue
     

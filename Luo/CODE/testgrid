@@ -12,8 +12,8 @@ Simple cube with diagonal
  coordinates of the points
        1      0.00000000E+00      0.00000000E+00
        2      0.10000000E+01      0.00000000E+00
-       3      0.00000000E+00      1.00000000E+01
-       4      1.00000000E+01      1.00000000E+01
+       3      0.00000000E+00      0.10000000E+01
+       4      0.10000000E+01      0.10000000E+01
  initial values for the unknowns and velocity field
      1 
      2 

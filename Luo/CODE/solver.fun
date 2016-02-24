@@ -7,32 +7,27 @@ test_suite solver
 
 test check_lhspo
 
-  use gridtools, only : basis_function
+  use test_helper
 
-  integer, parameter :: nnode  = 3
-  integer, parameter :: nvars  = 2
-  integer, parameter :: neqns  = 2
-  integer, parameter :: nelem  = 2
-  integer, parameter :: npoin  = 6
-  integer, parameter :: ndimn  = 2
-  integer, parameter :: nsteps = 3
-  
-  real(dp), parameter :: tolerance = 1.e-20_dp
-
-  real(dp), dimension(:,:),     allocatable :: coord, geoel, rface
   real(dp), dimension(:,:),     allocatable :: rhspo, phi
   real(dp), dimension(:,:,:,:), allocatable :: lhspo
 
-  integer, dimension(nnode,npoin) :: inpoel
+  integer :: nvars, neqns, i, j
 
 continue
 
-  allocate(inpoel(3,nelem))
-  allocate(coord(ndimn,npoin))
+  nvars = 1
+  neqns = 1
 
-  call basis_function(nelem,geoel,inpoel,coord)
+  call setup_cube
+  allocate(lhspo(nvars,neqns,npoin,npoin))
+  allocate(rhspo(nvars,npoin))
 
   lhspo = get_lhspo(npoin,nelem,nnode,nvars,neqns,inpoel,geoel)
+
+  do i = 1, npoin
+    write(*,*) "CHECK: lhspo = ",(lhspo(1,1,i,j), j=1,npoin)
+  end do
 
 end test
 
