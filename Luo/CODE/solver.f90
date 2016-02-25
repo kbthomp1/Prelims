@@ -101,14 +101,98 @@ contains
         do j=1,grid%nnode
           jp = grid%inpoel(j,ielem)
           lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
-          lhspo(ip,jp+grid%npoin) = fact*(bx(j) + by(j))*D**2
+
+          ! \nabla(B) Basis for lift operator
+          lhspo(ip,jp+grid%npoin) = lhspo(ip,jp)                               &
+                                  + (bx(i)*bx(j) + by(i)*by(j))*area
+
+          ! P1^2 basis for lift operator
+          !lhspo(ip,jp+grid%npoin) = fact*(bx(j) + by(j))*D**2
         end do
         lhspo(ip+grid%npoin,ip+grid%npoin) = one
       end do
 
     end do
 
+    call add_flux_contributions(lhspo,grid,ndof)
+
   end function get_lhspo
+
+!===================== ADD_FLUX_CONTRIBUTIONS ===============================80
+! Add the flux contributions to the LHS matrix
+!============================================================================80
+  subroutine add_flux_contributions(lhspo,grid,ndof)
+
+    integer,        intent(in) :: ndof
+    type(gridtype), intent(in) :: grid
+
+    real(dp), dimension(ndof,ndof), intent(inout) :: lhspo
+
+    integer :: iface, icell, jcell
+    integer :: ip1, ip2, ip3, jp1, jp2, jp3
+
+    real(dp), dimension(2) :: bx_i, by_i, bx_j, by_j
+
+    real(dp), dimension(grid%nnode) :: icell_coefs, jcell_coefs
+
+    real(dp) :: nx, ny, face_area
+
+  continue
+
+    write(*,*) "CHECK: nface, numfac = ",grid%nface,grid%numfac
+
+    interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
+
+      icell = grid%intfac(1,iface)  ! left cell
+      jcell = grid%intfac(2,iface)  ! right cell
+
+      !compute unit normal vector
+      nx = grid%del(1,iface)/grid%del(3,iface)
+      ny = grid%del(2,iface)/grid%del(3,iface)
+      face_area = grid%del(3,iface)
+
+      write(*,*) "CHECK: i/j cell:",icell,jcell
+      write(*,*) "CHECK: nx, ny:",nx,ny
+      write(*,*) "CHECK: face area: ", face_area
+
+      ip1 = grid%inpoel(1,icell)
+      ip2 = grid%inpoel(2,icell)
+      ip3 = grid%inpoel(3,icell)
+
+      jp1 = grid%inpoel(1,jcell)
+      jp2 = grid%inpoel(2,jcell)
+      jp3 = grid%inpoel(3,jcell)
+
+      write(*,*) "CHECK:  left cell pts:",ip1,ip2,ip3
+      write(*,*) "CHECK: right cell pts:",jp1,jp2,jp3
+
+      ! Basis functions
+      bx_i(1:2) = grid%geoel(1:2,icell)
+      by_i(1:2) = grid%geoel(3:4,icell)
+      bx_j(1:2) = grid%geoel(1:2,jcell)
+      by_j(1:2) = grid%geoel(3:4,jcell)
+
+      write(*,*) "CHECK: bx_i:", bx_i
+      write(*,*) "CHECK: bx_j:", bx_j
+
+      ! Left cell contributions to flux
+      icell_coefs(1) = bx_i(1)*nx + by_i(1)*ny
+      icell_coefs(2) = bx_i(2)*nx + by_i(2)*ny
+      icell_coefs(3) = -(bx_i(1) + bx_i(2))*nx   &
+                       -(by_i(1) + by_i(2))*ny
+
+      ! Right cell contributions to flux
+      jcell_coefs(1) = bx_j(1)*nx + by_j(1)*ny
+      jcell_coefs(2) = bx_j(2)*nx + by_j(2)*ny
+      jcell_coefs(3) = -(bx_j(1) + bx_j(2))*nx   &
+                       -(by_j(1) + by_j(2))*ny
+
+      write(*,"(A,3g12.4)") "CHECK: icell_coefs: ", icell_coefs
+      write(*,"(A,3g12.4)") "CHECK: jcell_coefs: ", jcell_coefs
+
+    end do interior_faces
+
+  end subroutine add_flux_contributions
 
 !============================ GET_SOLN ======================================80
 ! Calculate velocities Vx, Vy, and Vt by interpolating solution to nodes
