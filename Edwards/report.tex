@@ -38,6 +38,7 @@
 \newcommand{\dint}[1]{\int_{\Omega}{#1} d \Omega}
 \newcommand{\fint}[1]{\int_{\Gamma}{#1} d \Gamma}
 \newcommand{\flux}{\vec{F}}
+\newcommand{\ma}{\mathbf{A}}
 
 \title{MAE 770 Written Preliminary Exam \#1}
 
@@ -54,36 +55,28 @@
       \rho D_k \frac{\partial Y_k^{(g)}}{\partial x_j} \cdot \hat{n}_j = M_k \sk
       \label{bc-posed}
     \end{equation}
-  Using the following nomenclature:
-  \begin{tabbing}
-    XXXXXXXXX \= \kill% this line sets tab stop
-    $m$ \> mass \\
-    $N$ \> number of molecules \\
-    $l$ \> length \\
-    $t$ \> time
-  \end{tabbing}
   The units of the variables on the left hand side of \ref{bc-posed} are
   \begin{align*}
-    \rho &= \frac{m}{l^3} \\
-    D_k &= \frac{l^2}{t} \\
-    x_j &= l
+    \rho &= \frac{(mass)}{(length)^3} \\
+    D_k &= \frac{(length)^2}{(time)} \\
+    x_j &= (length)
   \end{align*}
   The mass fraction, $Y_k^{(g)}$, is unitless, as well as the unit normal vector,
-  $\hat{n}_j$. Since the unit of molecular weight are, $M_k = m/N$, we can
+  $\hat{n}_j$. Since the units of molecular weight are, $M_k = (mass)/(mole)$, we can
   rearrange \eref{bc-posed} and solve for the units of $\sk$
   \begin{equation}
     \label{units sdot}
     \begin{aligned}
       \sk &= \frac{\rho D_k}{M_k}\frac{\partial Y_k^{(g)}}{\partial x_j}\cdot \hat{n}_j \\
-      &= \frac{m}{l^3} \frac{N}{m} \frac{l^2}{t}\frac{1}{l} \\
-      &= \frac{N}{l^2 t}
+      &= \frac{(mass)}{(length)^3} \frac{(moles)}{(mass)} \frac{(length)^2}{(time)}\frac{1}{(length)} \\
+      &= \frac{(moles)}{(length)^2 (time)}
     \end{aligned}
   \end{equation}
   Expressing surface coverage, $\Theta_i$, as the fraction of sites occupied by
   species $i$ implies that it is unitless.  The concentration of
-  surface-absorbed species, $C_k$, has units $N/l^2$ and must be equivalent to
+  surface-absorbed species, $C_k$, has units $(moles)/(length)^2$ and must be equivalent to
   the product of surface coverage and surface site density, $\Gamma$; therefore,
-  the units of surface site density must be $N/l^2$.  Thus, the units for $\sk$
+  the units of surface site density must be $(moles)/(length)^2$.  Thus, the units for $\sk$
   and $\Gamma$, expressed in the same basis as the problem was posed, are
   \[
     \boxed{\sk = \frac{moles}{area^2-sec}}
@@ -146,7 +139,7 @@
       C_i = \theta_i \Gamma
       \label{surface-c}
     \end{equation}
-    It becomes clear that
+    and differentiating in time
     \begin{equation}
       \frac{\partial C_i}{\partial t} = \frac{\partial \theta_i}{\partial t} \Gamma = \sks{i}
     \end{equation}
@@ -159,8 +152,10 @@
       }
       \label{steady-surf-cov}
     \end{equation}
-    For $i$=surface species. This reduces \erefs{H-source}{H2Os-source} to a
-    set of linear equations to be solved for all surface species concentrations.
+    For $i$=surface species. This reduces \erefs{H-source}{H2Os-source} to an
+    algebraic system to be solved for all surface species concentrations.  The
+    algebraic system is nonlinear, and it can be solved by a Newton or
+    quasi-Newton iteration in practice.
 
   \item Determining the units for the forward and backward rate coefficients,
   $k_f$ and $k_b$, begins with looking at the units of $\sk$.  Since the source
@@ -327,30 +322,32 @@
     Since it was previously shown that $\sk$ is a
     function of both the gas phase and surface species concentrations, a
     decision must be made as to how to couple updating the surface-absorbed
-    species.  In this explicit formulation, it is plausible to adopt a ``loosely
-    coupled'' approach, where the surface species are lagged and updated after
-    the gas phase species have been updated.  This introduces an added
-    explicitness to the scheme, which may impact robustness, but it is very
-    straightforward to program.  While overly simplistic, an implementation of
-    solving one iteration of this loosely coupled scheme might look like this
-    \begin{lstlisting}[language=FORTRAN, caption=Loosely Coupled Implementation]
+    species.  One option is to update the surface species at the same time
+    level as the gas phase species have been updated.  While admittedly overly
+    simplistic, here is what an implementation of solving one iteration of this
+    loosely coupled scheme might look like this
+
+    \begin{lstlisting}[language=FORTRAN, caption=Simple Implementation]
+
+    do timestep = 1, n_timesteps
 
       ! Form the residual at all nodes
-      do iedge = 1, nedges
-        node1 = edge_to_node(1,iedge)
-        node2 = edge_to_node(2,iedge)
+      call add_inviscid_fluxes(q,grid,residual)
+      call add_viscous_flux(q,grid,residual)
 
-        flux = get_flux(q(:,node1),q(:,node2))
-
-        residual(:,node1) = residual(:,node1) + flux
-        residual(:,node2) = residual(:,node2) - flux
-      end do
+      ! Set other non-surface boundary conditions
+      call set_nonsurface_bc(q,grid,residual)
 
       ! Set the catalytic boundary condition
-      do inode = 1, nbc_nodes
+      do inode = 1, nsurface_nodes
         bc_node = get_node_on_surface(inode)
         residual(:,bc_node) = set_catalytic_bc(q(:,bc_node), &
                               surface_species(:,bc_node))
+
+      ! Update the surface species concentrations
+        sdot = get_surface_source_term(q(:,bc_node))
+        surface_species(:,bc_node) = surface_species(:,bc_node) &
+                                   + sdot*dt
       end do
 
       ! Update the conserved (gas-phase) quantities
@@ -358,13 +355,7 @@
         q(:,node) = q(:,node) - dt*residual(:,node)
       end do
 
-      ! Update the surface species concentrations
-      do inode = q, nbc_nodes
-        bc_node = get_node_on_surface(inode)
-        sdot = get_surface_source_term(q(:,bc_node))
-        surface_species(:,bc_node) = surface_species(:,bc_node) &
-                                   + sdot*dt
-      end do
+    end do
 
     \end{lstlisting}
     In this simple illustration, the gas-phase species mass fractions (or
@@ -373,24 +364,53 @@
     concentrations via
     \begin{equation}
       \cs{k}^{n+1} = \cs{k}^{n} + \left(\Delta
-      t\right)\left(\sk(\cg{k}^{(n+1)},\cs{k}^{n})\right)
+      t\right)\left(\sk(\cg{k}^{n},\cs{k}^{n})\right)
       \label{cs-update}
     \end{equation}
     for k=surface species.  \eref{cs-update} can also be expressed in terms of
     surface coverage $\cs{k} = \theta_k \Gamma$
     \begin{equation}
       \theta_{k}^{n+1} = \theta_{k}^{n} + \left(\frac{\Delta t}{\Gamma}
-      \right)\left(\sk(\cg{k}^{(n+1)},\cs{k}^{n})\right)
+      \right)\left(\sk(\cg{k}^{n},\cs{k}^{n})\right)
       \label{theta-update}
     \end{equation}
     As was previously shown, if the time variation of the surface coverage is
     held to be zero, then $\sk = 0$ for k=surface species.  This results in an
-    algebraic expression to be solved for at the boundary nodes that will evolve
-    the gas-phase species concentrations, but not the surface species
-    concentrations.  In this case, the final step of updating the surface
-    species concentrations is not needed; however, their quantities should still
-    be stored in the routine ``\verb|set_catalytic_bc|'' that calculates the
-    boundary flux, as they are still needed to evaluate the source term $\sk$.
+    algebraic system of equations to be solved for at the boundary nodes that
+    can be solved via a Newton iteration to obtain the surface concentrations.
+    In this case, the step of updating and storing the surface species
+    concentrations can be handled in the routine ``\verb|set_catalytic_bc|''
+    that calculates the boundary flux.  
+    
+    It is also worth noting that an implicit approach can also be derived
+    using a ``loosely coupled'' approach for updating the gas phase and surface
+    species. Recasting \eref{continuity} as
+    \begin{equation}
+      \ma \Delta (\overline{\ry})_i = -(R_k)_i
+      \label{implicit-continuity}
+    \end{equation}
+    Where $\ma$ is the jacobian matrix of the residual fluxes, with the time
+    derivative terms on the diagonal.  This becomes a Newton method (or
+    quasi-Newton method, depending of the exactness of $\ma$), as the system is
+    solved for the state update and marched forward to steady state.  Since
+    there is still a need to account for the surface species in this
+    formulation, the surface concentrations can be updated with the gas
+    concentrations in the overall system; however, this drastically increases
+    the number of equations to solve.  This is impractical, since the surface
+    concentrations will be zero everywhere other than on the catalytic surface.
+    A better approach is to loosely couple the gas-phase system to the surface
+    concentrations, where only $\Delta (\overline{\ry})_i$ is solved for at a
+    given timestep and the law of mass action can be used to enforce elemental
+    conservation in updating the surface concentrations.  In practice, this
+    could be done as
+    \begin{equation}
+      \theta_{k}^{n+1} = \theta_{k}^{n} + \left(\frac{\Delta t}{\Gamma}
+      \right)\left(\sk'(\cg{k}^{n+1},\cs{k}^{n})\right)
+      \label{theta-update-decoupled}
+    \end{equation}
+    For $k$ = surface species and $\sk'$ are the source terms from
+    \erefs{H-source}{H2Os-source} evaluated such that $\sk$ for $k$ = gas
+    species is zero.
 
     Determining whether the source term components sum to zero is based on
     elemental conservation.  $\sum_{k=\text{gas species}}{\dot{w}_k}$ will only
