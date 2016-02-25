@@ -15,8 +15,6 @@ program main
   real(dp), dimension(:),   allocatable :: rhspo, phi
   real(dp), dimension(:,:), allocatable :: lhspo
   
-  integer, dimension(:,:),  allocatable :: inpoel, bcface
-
   type(gridtype) :: grid
 
 continue
@@ -24,6 +22,7 @@ continue
   call read_namelist
   
   call preprocess_grid(grid,gridfile,nnode)
+
 ! Number of degrees of freedom to solve
   ndof = nvars*grid%npoin
   
