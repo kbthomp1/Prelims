@@ -55,7 +55,7 @@
       \rho D_k \frac{\partial Y_k^{(g)}}{\partial x_j} \cdot \hat{n}_j = M_k \sk
       \label{bc-posed}
     \end{equation}
-  The units of the variables on the left hand side of \ref{bc-posed} are
+  The units of the variables on the left hand side of \eref{bc-posed} are
   \begin{align*}
     \rho &= \frac{(mass)}{(length)^3} \\
     D_k &= \frac{(length)^2}{(time)} \\
@@ -101,8 +101,8 @@
   for that species as a product in the forward reaction.  $N_k$ denotes the
   number of species and $N_r$ denotes the number of reactions.  Additionally,
   the backward rate coefficient $k_{b,r}$ is usually determined from the forward
-  rate coefficient $k_{f,r}$ and the equilibrium constant $k_{c,r}$.  The later
-  of these is often available as a curve fit function of temperature.  Thus,
+  rate coefficient $k_{f,r}$ and the equilibrium constant $k_{c,r}$.  Both
+  $\kf{r}$ and $\kc{r}$ are often available as functions of temperature. Thus,
   using \eref{sdot form} the $\sk$ source terms can be expressed as
   \begin{empheq}[box=\boxed]{align}
     \skg{H_2}  &= -\left( \kf{1} \cg{H_2} - \kcf{1} {\cs{H}}^2 \right) \\
@@ -184,7 +184,7 @@
   where $\nu_{i,r}^{'(g)}$ is the stoichiometric coefficient of gas-phase
   reactant species $i$ in reaction $r$, and $\nu_{i,r}^{'(s)}$ is the
   stoichiometric coefficient of surface reactant species $i$ in reaction $r$.
-  Since $R_{b,r}$ must also have units of $mol/(cm$-$s)$, the same reasoning can
+  Since $R_{b,r}$ must also have units of $mol/(cm^2$-$s)$, the same reasoning can
   be used to derive
   \begin{equation}
     \kb{r} = \frac{mol}{(cm^2)(s)\prod_{i=1}^{N_k}\left(
@@ -292,11 +292,12 @@
       \overline{\wk} &= \frac{1}{V}\dint{\wk}
       \label{avg-q}
     \end{align}
-    The fluxes at the cell interfaces are discontinuous; therefore, a flux function
-    $\flux$ = $\flux (\vec{q}_L, \vec{q}_R)$ is used evaluate fluxes at the cell interface.
-    The vectors $\vec{q_{L,R}}$ denote the interface left and right states used
-    in evaluating the flux. If \eref{continuity} is integrated explicitly in
-    time, $\overline{\ry}$ can be updated via
+    where $V$ is the volume of the cell. The fluxes at the cell interfaces are
+    discontinuous; therefore, a flux function $\flux$ = $\flux (\vec{q}_L,
+    \vec{q}_R)$ is used evaluate fluxes at the cell interface.  The vectors
+    $\vec{q_{L,R}}$ denote the interface left and right states used in
+    evaluating the flux. If \eref{continuity} is integrated explicitly in time,
+    $\overline{\ry}$ can be updated via
     \begin{equation}
       (\overline{\ry})_{i}^{n+1} = (\overline{\ry})^{n}_i - \Delta t (R_k)_i
       \label{expl-fv}
@@ -304,10 +305,10 @@
     Where the superscript $^n$ denotes the time level, the subscript $_i$
     denotes the node or cell number, and $(R_k)_i$ is the residual of species
     $k$ flux at node or cell $i$ computed by summing the fluxes/sources at each
-    cell face.  For a node-centered FV method a dual control volume is
-    constructed around each node, enabling the residual to be formulated in an
-    edge-based fashion.  An advantage of using a node-centered FV method is that
-    it is easy to implement the boundary condition posed in \eref{bc-posed} via
+    cell.  For a node-centered FV method a dual control volume is constructed
+    around each node, enabling the residual to be formulated in an edge-based
+    fashion.  An advantage of using a node-centered FV method is that it is
+    easy to implement the boundary condition posed in \eref{bc-posed} via
     specifying the flux (weak enforcement).  By looping over nodes on the
     boundary with the catalytic surface, the residual can be set by
     \begin{equation}
@@ -358,20 +359,19 @@
     end do
 
     \end{lstlisting}
-    In this simple illustration, the gas-phase species mass fractions (or
-    densities) are updated to the next time-level, and are in turn used to
-    compute the source term vector used to update the surface species
-    concentrations via
+    In this simple illustration, the source term vector used to update the
+    system is evaluated with all concentrations at the same time level.  The
+    surface concentrations are then updated via
     \begin{equation}
       \cs{k}^{n+1} = \cs{k}^{n} + \left(\Delta
-      t\right)\left(\sk(\cg{k}^{n},\cs{k}^{n})\right)
+      t\right)\left(\sk(\cg{}^{n},\cs{}^{n})\right)
       \label{cs-update}
     \end{equation}
     for k=surface species.  \eref{cs-update} can also be expressed in terms of
     surface coverage $\cs{k} = \theta_k \Gamma$
     \begin{equation}
       \theta_{k}^{n+1} = \theta_{k}^{n} + \left(\frac{\Delta t}{\Gamma}
-      \right)\left(\sk(\cg{k}^{n},\cs{k}^{n})\right)
+      \right)\left(\sk(\cg{}^{n},\cs{}^{n})\right)
       \label{theta-update}
     \end{equation}
     As was previously shown, if the time variation of the surface coverage is
@@ -405,7 +405,7 @@
     could be done as
     \begin{equation}
       \theta_{k}^{n+1} = \theta_{k}^{n} + \left(\frac{\Delta t}{\Gamma}
-      \right)\left(\sk'(\cg{k}^{n+1},\cs{k}^{n})\right)
+      \right)\left(\sk'(\cg{}^{n+1},\cs{}^{n})\right)
       \label{theta-update-decoupled}
     \end{equation}
     For $k$ = surface species and $\sk'$ are the source terms from
