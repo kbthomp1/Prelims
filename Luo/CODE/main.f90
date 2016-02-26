@@ -17,6 +17,8 @@ program main
   
   type(gridtype) :: grid
 
+  integer :: i
+
 continue
 
   call read_namelist
@@ -24,7 +26,7 @@ continue
   call preprocess_grid(grid,gridfile,nnode)
 
 ! Number of degrees of freedom to solve
-  ndof = nvars*grid%npoin
+  ndof = grid%npoin + grid%numfac
   
 ! Allocate the work arrays
   allocate(lhspo(ndof,ndof))
@@ -41,7 +43,11 @@ continue
   lhspo = get_lhspo(grid,ndof)
    
   call solve(lin_solver,lhspo,rhspo,phi,ndof,nsteps,tolerance)
-  
+
+  do i = 1, ndof
+    write(*,*) "CHECK: phi = ",phi(i)
+  end do
+
   call get_soln(Vx,Vy,Vt,phi,grid)
   
   call write_tec_volume(tec_dataname,grid,phi,Vx,Vy,Vt)

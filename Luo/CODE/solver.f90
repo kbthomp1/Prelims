@@ -12,9 +12,19 @@ module solver
   public :: get_soln
   public :: solve
 
+  !unit tests
+  public :: add_flux_contributions
+  public :: add_lift_primal_domain
+  public :: add_lift_second_domain
+  public :: add_jump_second_face
+  public :: add_flux_primal_face
+
+  real(dp), parameter :: my_4th = 0.25_dp
+
   real(dp), parameter :: zero = 0.0_dp
   real(dp), parameter :: half = 0.5_dp
   real(dp), parameter :: one  = 1.0_dp
+  real(dp), parameter :: two  = 1.0_dp
 
 contains
 
@@ -72,7 +82,7 @@ contains
     real(dp) :: area, D
 
     integer :: ielem, ip1, ip2,ip3
-    integer :: i, ip, j, jp, id, jd
+    integer :: i, ip, j, jp
 
     real(dp), parameter :: fact = one/12._dp
 
@@ -98,18 +108,9 @@ contains
 
       do i=1,grid%nnode
         ip = grid%inpoel(i,ielem)
-        id = ip+grid%npoin
         do j=1,grid%nnode
           jp = grid%inpoel(j,ielem)
-          jd = jp+grid%npoin
           lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
-
-          ! \nabla(B) Basis for lift operator
-          lhspo(ip,jd) = lhspo(ip,jd) + (bx(i)*bx(j) + by(i)*by(j))*area
-          lhspo(id,jd) = lhspo(id,jd) + (bx(i)*bx(j) + by(i)*by(j))*area
-
-          ! P1^2 basis for lift operator
-          !lhspo(ip,jp+grid%npoin) = fact*(bx(j) + by(j))*D**2
         end do
       end do
 
@@ -118,6 +119,153 @@ contains
     call add_flux_contributions(lhspo,grid,ndof)
 
   end function get_lhspo
+
+!===================== ADD_LIFT_PRIMAL_DOMAIN ===============================80
+! Add local lift functions to primal domain integral
+!============================================================================80
+  subroutine add_lift_primal_domain(icell,jcell,iface,grid,lhspo)
+
+    integer,        intent(in) :: icell, jcell, iface
+    type(gridtype), intent(in) :: grid
+    real(dp), dimension(:,:), intent(inout) :: lhspo
+
+    real(dp), dimension(3) :: bx, by
+    integer,  dimension(2) :: cells
+    integer  :: ilift, ip, i, cell, l
+    real(dp) :: cell_area
+
+  continue
+
+    ilift = global_lift_coord(iface,grid)
+    cells(1) = icell
+    cells(2) = jcell
+
+    do l = 1,2
+      cell = cells(l)
+      call get_basis(bx,by,grid,cell)
+      cell_area = half*grid%geoel(5,cell)
+      do i=1,grid%nnode
+        ip = grid%inpoel(i,cell)
+        lhspo(ip,ilift) = lhspo(ip,ilift) - (bx(i) + by(i))*cell_area
+      end do
+    end do
+
+  end subroutine add_lift_primal_domain
+
+!===================== ADD_LIFT_SECOND_DOMAIN ===============================80
+! Add local lift to lift equation domain integral
+!============================================================================80
+  subroutine add_lift_second_domain(icell,jcell,iface,grid,lhspo)
+
+    integer,        intent(in) :: icell, jcell, iface
+    type(gridtype), intent(in) :: grid
+
+    real(dp), dimension(:,:), intent(inout) :: lhspo
+
+    integer :: ilift
+
+    real(dp) :: icell_area, jcell_area
+
+  continue
+
+    ilift = global_lift_coord(iface,grid)
+    icell_area = half*grid%geoel(5,icell)
+    jcell_area = half*grid%geoel(5,jcell)
+    lhspo(ilift,ilift) = lhspo(ilift,ilift) + two*(icell_area+jcell_area)
+
+  end subroutine add_lift_second_domain
+
+!===================== ADD_LIFT_SECOND_DOMAIN ===============================80
+! Add jump condition to lift equation
+!============================================================================80
+  subroutine add_jump_second_face(icell,jcell,iface,grid,lhspo)
+
+    integer,        intent(in) :: icell, jcell, iface
+    type(gridtype), intent(in) :: grid
+
+    real(dp), dimension(:,:), intent(inout) :: lhspo
+
+    integer :: ilift, ip, jp, i
+
+    real(dp) :: nx, ny, face_area, integrated_const
+    real(dp) :: eta = 4._dp
+
+  continue
+
+    ilift = global_lift_coord(iface,grid)
+    call get_face_normal(nx,ny,face_area,grid,iface)
+
+    ! result of integral of jump function at iface
+    integrated_const = my_4th*eta*(nx+ny)*face_area
+
+    do i=1,grid%nnode
+      ip = grid%inpoel(i,icell)
+      jp = grid%inpoel(i,jcell)
+      lhspo(ilift,jp) = lhspo(ilift,jp) + integrated_const
+      lhspo(ilift,ip) = lhspo(ilift,ip) - integrated_const
+    end do
+
+  end subroutine add_jump_second_face
+
+!======================= ADD_FLUX_PRIMAL_FACE ===============================80
+! Add flux to primal equation at iface
+!============================================================================80
+  subroutine add_flux_primal_face(icell,jcell,iface,grid,lhspo)
+
+    integer,        intent(in) :: icell, jcell, iface
+    type(gridtype), intent(in) :: grid
+
+    real(dp), dimension(:,:), intent(inout) :: lhspo
+
+    real(dp), dimension(3) :: bx, by, grad
+    real(dp), dimension(3) :: phi_coefs
+    real(dp), dimension(2) :: sgn
+
+    integer, dimension(2) :: cells
+    integer :: ilift, ip, jp, i, j, l, s
+    integer :: cell, cell_idx
+
+    real(dp) :: nx, ny, face_area, lift_coef
+
+  continue
+
+    ilift = global_lift_coord(iface,grid)
+    cells(1) = icell
+    cells(2) = jcell
+    sgn(1)   = one   ! add flux to left cell
+    sgn(2)   = -one  ! subtract flux from right cell
+    call get_face_normal(nx,ny,face_area,grid,iface)
+
+    flip_sign: do s = 1,2
+      cell_idx = cells(s) !index of cell to add/subtract flux
+      left_right_cells: do l = 1,2
+
+        cell = cells(l) !index of cell to form contibutions
+        ! Basis functions -> dB/dx, dB/dy
+        call get_basis(bx,by,grid,cell)
+
+        ! half of averaged gradient
+        grad(1:3) = half*(bx(1:3)*nx + by(1:3)*ny)
+
+        ! integrated coefficients of phi
+        phi_coefs(1:3) = grad(1:3)*half*face_area
+
+        ! integrated coefficient of local lift
+        lift_coef = my_4th*face_area
+
+        do i=1,grid%nnode
+          ip = grid%inpoel(i,cell_idx)
+          lhspo(ip,ilift) = lhspo(ip,ilift) + sgn(s)*lift_coef
+          do j=1,grid%nnode
+            jp = grid%inpoel(j,cell)
+            lhspo(ip,jp) = lhspo(ip,jp) - sgn(s)*phi_coefs(j)
+          end do
+        end do
+
+      end do left_right_cells
+    end do flip_sign
+
+  end subroutine add_flux_primal_face
 
 !===================== ADD_FLUX_CONTRIBUTIONS ===============================80
 ! Add the flux contributions to the LHS matrix
@@ -130,103 +278,18 @@ contains
     real(dp), dimension(ndof,ndof), intent(inout) :: lhspo
 
     integer :: iface, icell, jcell
-    integer :: ip_icell, ip_jcell, jp_icell, jp_jcell
-    integer :: id_icell, id_jcell, jd_icell, jd_jcell
-    integer :: i, j, npoin
-
-    real(dp), dimension(3) :: bx_i, by_i, bx_j, by_j
-
-    real(dp), dimension(grid%nnode) :: icell_coefs, jcell_coefs
-
-    real(dp) :: nx, ny, face_area, eta
-    real(dp) :: iflux, jflux
 
   continue
-
-    npoin = grid%npoin
-
-    write(*,*) "CHECK: nface, numfac = ",grid%nface,grid%numfac
 
     interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
 
       icell = grid%intfac(1,iface)  ! left cell
       jcell = grid%intfac(2,iface)  ! right cell
 
-      !compute unit normal vector
-      nx = grid%del(1,iface)/grid%del(3,iface)
-      ny = grid%del(2,iface)/grid%del(3,iface)
-      face_area = grid%del(3,iface)
-
-      write(*,*) "CHECK: i/j cell:",icell,jcell
-      write(*,*) "CHECK: nx, ny:",nx,ny
-      write(*,*) "CHECK: face area: ", face_area
-
-      ! Basis functions
-      bx_i(1:2) = grid%geoel(1:2,icell)
-      bx_i(3)   = -(bx_i(1) - bx_i(2))
-      by_i(1:2) = grid%geoel(3:4,icell)
-      by_i(3)   = -(by_i(1) - by_i(2))
-      bx_j(1:2) = grid%geoel(1:2,jcell)
-      bx_j(3)   = -(bx_j(1) - bx_j(2))
-      by_j(1:2) = grid%geoel(3:4,jcell)
-      by_j(3)   = -(by_j(1) - by_j(2))
-
-      write(*,*) "CHECK: bx_i:", bx_i
-      write(*,*) "CHECK: bx_j:", bx_j
-
-      ! Left cell contributions to flux (eqn 1)
-      icell_coefs(1:3) = half*(bx_i(1:3)*nx + by_i(1:3)*ny)
-
-      ! Right cell contributions to flux (eqn 1)
-      jcell_coefs(1:3) = half*(bx_j(1:3)*nx + by_j(1:3)*ny)
-
-      write(*,"(A,3g12.4)") "CHECK: icell_coefs: ", icell_coefs
-      write(*,"(A,3g12.4)") "CHECK: jcell_coefs: ", jcell_coefs
-
-      do i=1,grid%nnode
-        ip_icell = grid%inpoel(i,icell)
-        ip_jcell = grid%inpoel(i,jcell)
-        do j=1,grid%nnode
-          jp_icell = grid%inpoel(j,icell)
-          jp_jcell = grid%inpoel(j,jcell)
-          id_icell = ip_icell + npoin
-          id_jcell = ip_jcell + npoin
-          jd_icell = jp_icell + npoin
-          jd_jcell = jp_jcell + npoin
-
-          iflux = half*icell_coefs(j)*face_area
-          jflux = half*jcell_coefs(j)*face_area
-
-          ! phi flux contribution to left cell nodes
-          lhspo(ip_icell,jp_icell) = lhspo(ip_icell,jp_icell) - iflux
-          lhspo(ip_icell,jp_jcell) = lhspo(ip_icell,jp_jcell) - jflux
-
-          ! phi flux contribution to right cell nodes
-          lhspo(ip_jcell,jp_icell) = lhspo(ip_jcell,jp_icell) + iflux
-          lhspo(ip_jcell,jp_jcell) = lhspo(ip_jcell,jp_jcell) + jflux
-
-          ! average local lift contribution to left cell nodes
-          lhspo(ip_icell,jd_icell) = lhspo(ip_icell,jd_icell) + iflux
-          lhspo(ip_icell,jd_jcell) = lhspo(ip_icell,jd_jcell) + jflux
-
-          ! average local lift contribution to right cell nodes
-          lhspo(ip_jcell,jd_icell) = lhspo(ip_jcell,jd_icell) - iflux
-          lhspo(ip_jcell,jd_jcell) = lhspo(ip_jcell,jd_jcell) - jflux
-
-          !local lifting function contributions
-          eta = 4._dp
-          iflux = half*eta*icell_coefs(i)*face_area
-          jflux = half*eta*jcell_coefs(i)*face_area
-
-          ! left cell
-          lhspo(id_icell,jp_icell) = lhspo(id_icell,jp_icell) - iflux
-          lhspo(id_icell,jp_jcell) = lhspo(id_icell,jp_jcell) + jflux
-
-          ! right cell
-          lhspo(id_jcell,jp_icell) = lhspo(id_jcell,jp_icell) + iflux
-          lhspo(id_jcell,jp_jcell) = lhspo(id_jcell,jp_jcell) - jflux
-        end do 
-      end do 
+      call add_lift_primal_domain(icell,jcell,iface,grid,lhspo)
+      call add_lift_second_domain(icell,jcell,iface,grid,lhspo)
+      call add_jump_second_face(icell,jcell,iface,grid,lhspo)
+      call add_flux_primal_face(icell,jcell,iface,grid,lhspo)
 
     end do interior_faces
 
@@ -343,5 +406,35 @@ contains
     !phi(1,:) = x
 
   end subroutine solve
+
+  subroutine get_basis(bx,by,grid,icell)
+    integer,                intent(in)  :: icell
+    type(gridtype),         intent(in)  :: grid
+    real(dp), dimension(3), intent(out) :: bx, by
+  continue
+    bx(1:2) = grid%geoel(1:2,icell)
+    bx(3)   = -(bx(1) - bx(2))
+    by(1:2) = grid%geoel(3:4,icell)
+    by(3)   = -(by(1) - by(2))
+  end subroutine get_basis
+
+  subroutine get_face_normal(nx,ny,face_area,grid,iface)
+    integer,        intent(in) :: iface
+    type(gridtype), intent(in) :: grid
+    real(dp),      intent(out) :: nx, ny, face_area
+  continue
+    !compute unit normal vector
+    nx = grid%del(1,iface)/grid%del(3,iface)
+    ny = grid%del(2,iface)/grid%del(3,iface)
+    face_area = grid%del(3,iface)
+  end subroutine get_face_normal
+
+  function global_lift_coord(iface,grid) result(ilift)
+    integer,        intent(in)  :: iface
+    type(gridtype), intent(in)  :: grid
+    integer :: ilift
+  continue
+    ilift = grid%npoin + iface - grid%nface
+  end function global_lift_coord
 
 end module solver
