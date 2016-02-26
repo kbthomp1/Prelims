@@ -55,7 +55,7 @@
       \rho D_k \frac{\partial Y_k^{(g)}}{\partial x_j} \cdot \hat{n}_j = M_k \sk
       \label{bc-posed}
     \end{equation}
-  The units of the variables on the left hand side of \ref{bc-posed} are
+  The units of the variables on the left hand side of \eref{bc-posed} are
   \begin{align*}
     \rho &= \frac{(mass)}{(length)^3} \\
     D_k &= \frac{(length)^2}{(time)} \\
@@ -305,10 +305,10 @@
     Where the superscript $^n$ denotes the time level, the subscript $_i$
     denotes the node or cell number, and $(R_k)_i$ is the residual of species
     $k$ flux at node or cell $i$ computed by summing the fluxes/sources at each
-    cell face.  For a node-centered FV method a dual control volume is
-    constructed around each node, enabling the residual to be formulated in an
-    edge-based fashion.  An advantage of using a node-centered FV method is that
-    it is easy to implement the boundary condition posed in \eref{bc-posed} via
+    cell.  For a node-centered FV method a dual control volume is constructed
+    around each node, enabling the residual to be formulated in an edge-based
+    fashion.  An advantage of using a node-centered FV method is that it is
+    easy to implement the boundary condition posed in \eref{bc-posed} via
     specifying the flux (weak enforcement).  By looping over nodes on the
     boundary with the catalytic surface, the residual can be set by
     \begin{equation}
