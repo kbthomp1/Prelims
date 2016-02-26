@@ -15,10 +15,10 @@ if [ ! "$(${funit_exec} --version 2>/dev/null)" ]; then
 fi
 
 run_funit(){
-  #env FC=gfortran \
-  #    FCFLAGS="-O0 -Wall -fbounds-check -fbacktrace -g -DDATADIR=\'path\'" \
-  env FC=ifort \
-     FCFLAGS="-O0 -warn -check -traceback -g -DDATADIR=\'path\'" \
+  #env FC=ifort \
+  #   FCFLAGS="-O0 -warn -check -traceback -g -DDATADIR=\'path\'" \
+  env FC=gfortran \
+      FCFLAGS="-O0 -Wall -fbounds-check -fbacktrace -g -DDATADIR=\'path\'" \
       LDFLAGS="-lc++" \
       FSFLAG=-I \
       CC=gcc \

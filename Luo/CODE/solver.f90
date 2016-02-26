@@ -72,7 +72,7 @@ contains
     real(dp) :: area, D
 
     integer :: ielem, ip1, ip2,ip3
-    integer :: i, ip, j, jp
+    integer :: i, ip, j, jp, id, jd
 
     real(dp), parameter :: fact = one/12._dp
 
@@ -98,18 +98,19 @@ contains
 
       do i=1,grid%nnode
         ip = grid%inpoel(i,ielem)
+        id = ip+grid%npoin
         do j=1,grid%nnode
           jp = grid%inpoel(j,ielem)
+          jd = jp+grid%npoin
           lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
 
           ! \nabla(B) Basis for lift operator
-          lhspo(ip,jp+grid%npoin) = lhspo(ip,jp)                               &
-                                  + (bx(i)*bx(j) + by(i)*by(j))*area
+          lhspo(ip,jd) = lhspo(ip,jd) + (bx(i)*bx(j) + by(i)*by(j))*area
+          lhspo(id,jd) = lhspo(id,jd) + (bx(i)*bx(j) + by(i)*by(j))*area
 
           ! P1^2 basis for lift operator
           !lhspo(ip,jp+grid%npoin) = fact*(bx(j) + by(j))*D**2
         end do
-        lhspo(ip+grid%npoin,ip+grid%npoin) = one
       end do
 
     end do
@@ -129,15 +130,20 @@ contains
     real(dp), dimension(ndof,ndof), intent(inout) :: lhspo
 
     integer :: iface, icell, jcell
-    integer :: ip1, ip2, ip3, jp1, jp2, jp3
+    integer :: ip_icell, ip_jcell, jp_icell, jp_jcell
+    integer :: id_icell, id_jcell, jd_icell, jd_jcell
+    integer :: i, j, npoin
 
-    real(dp), dimension(2) :: bx_i, by_i, bx_j, by_j
+    real(dp), dimension(3) :: bx_i, by_i, bx_j, by_j
 
     real(dp), dimension(grid%nnode) :: icell_coefs, jcell_coefs
 
-    real(dp) :: nx, ny, face_area
+    real(dp) :: nx, ny, face_area, eta
+    real(dp) :: iflux, jflux
 
   continue
+
+    npoin = grid%npoin
 
     write(*,*) "CHECK: nface, numfac = ",grid%nface,grid%numfac
 
@@ -155,40 +161,72 @@ contains
       write(*,*) "CHECK: nx, ny:",nx,ny
       write(*,*) "CHECK: face area: ", face_area
 
-      ip1 = grid%inpoel(1,icell)
-      ip2 = grid%inpoel(2,icell)
-      ip3 = grid%inpoel(3,icell)
-
-      jp1 = grid%inpoel(1,jcell)
-      jp2 = grid%inpoel(2,jcell)
-      jp3 = grid%inpoel(3,jcell)
-
-      write(*,*) "CHECK:  left cell pts:",ip1,ip2,ip3
-      write(*,*) "CHECK: right cell pts:",jp1,jp2,jp3
-
       ! Basis functions
       bx_i(1:2) = grid%geoel(1:2,icell)
+      bx_i(3)   = -(bx_i(1) - bx_i(2))
       by_i(1:2) = grid%geoel(3:4,icell)
+      by_i(3)   = -(by_i(1) - by_i(2))
       bx_j(1:2) = grid%geoel(1:2,jcell)
+      bx_j(3)   = -(bx_j(1) - bx_j(2))
       by_j(1:2) = grid%geoel(3:4,jcell)
+      by_j(3)   = -(by_j(1) - by_j(2))
 
       write(*,*) "CHECK: bx_i:", bx_i
       write(*,*) "CHECK: bx_j:", bx_j
 
-      ! Left cell contributions to flux
-      icell_coefs(1) = bx_i(1)*nx + by_i(1)*ny
-      icell_coefs(2) = bx_i(2)*nx + by_i(2)*ny
-      icell_coefs(3) = -(bx_i(1) + bx_i(2))*nx   &
-                       -(by_i(1) + by_i(2))*ny
+      ! Left cell contributions to flux (eqn 1)
+      icell_coefs(1:3) = half*(bx_i(1:3)*nx + by_i(1:3)*ny)
 
-      ! Right cell contributions to flux
-      jcell_coefs(1) = bx_j(1)*nx + by_j(1)*ny
-      jcell_coefs(2) = bx_j(2)*nx + by_j(2)*ny
-      jcell_coefs(3) = -(bx_j(1) + bx_j(2))*nx   &
-                       -(by_j(1) + by_j(2))*ny
+      ! Right cell contributions to flux (eqn 1)
+      jcell_coefs(1:3) = half*(bx_j(1:3)*nx + by_j(1:3)*ny)
 
       write(*,"(A,3g12.4)") "CHECK: icell_coefs: ", icell_coefs
       write(*,"(A,3g12.4)") "CHECK: jcell_coefs: ", jcell_coefs
+
+      do i=1,grid%nnode
+        ip_icell = grid%inpoel(i,icell)
+        ip_jcell = grid%inpoel(i,jcell)
+        do j=1,grid%nnode
+          jp_icell = grid%inpoel(j,icell)
+          jp_jcell = grid%inpoel(j,jcell)
+          id_icell = ip_icell + npoin
+          id_jcell = ip_jcell + npoin
+          jd_icell = jp_icell + npoin
+          jd_jcell = jp_jcell + npoin
+
+          iflux = half*icell_coefs(j)*face_area
+          jflux = half*jcell_coefs(j)*face_area
+
+          ! phi flux contribution to left cell nodes
+          lhspo(ip_icell,jp_icell) = lhspo(ip_icell,jp_icell) - iflux
+          lhspo(ip_icell,jp_jcell) = lhspo(ip_icell,jp_jcell) - jflux
+
+          ! phi flux contribution to right cell nodes
+          lhspo(ip_jcell,jp_icell) = lhspo(ip_jcell,jp_icell) + iflux
+          lhspo(ip_jcell,jp_jcell) = lhspo(ip_jcell,jp_jcell) + jflux
+
+          ! average local lift contribution to left cell nodes
+          lhspo(ip_icell,jd_icell) = lhspo(ip_icell,jd_icell) + iflux
+          lhspo(ip_icell,jd_jcell) = lhspo(ip_icell,jd_jcell) + jflux
+
+          ! average local lift contribution to right cell nodes
+          lhspo(ip_jcell,jd_icell) = lhspo(ip_jcell,jd_icell) - iflux
+          lhspo(ip_jcell,jd_jcell) = lhspo(ip_jcell,jd_jcell) - jflux
+
+          !local lifting function contributions
+          eta = 4._dp
+          iflux = half*eta*icell_coefs(i)*face_area
+          jflux = half*eta*jcell_coefs(i)*face_area
+
+          ! left cell
+          lhspo(id_icell,jp_icell) = lhspo(id_icell,jp_icell) - iflux
+          lhspo(id_icell,jp_jcell) = lhspo(id_icell,jp_jcell) + jflux
+
+          ! right cell
+          lhspo(id_jcell,jp_icell) = lhspo(id_jcell,jp_icell) + iflux
+          lhspo(id_jcell,jp_jcell) = lhspo(id_jcell,jp_jcell) - jflux
+        end do 
+      end do 
 
     end do interior_faces
 

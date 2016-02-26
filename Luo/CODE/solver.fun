@@ -19,8 +19,8 @@ continue
 
   lhspo = get_lhspo(grid,ndof)
 
-  do i = 1, grid%npoin
-    write(*,20) "CHECK: lhspo = ",(lhspo(i,j), j=1,grid%npoin)
+  do i = 1, ndof
+    write(*,20) "CHECK: lhspo = ",(lhspo(i,j), j=1,ndof)
   end do
 
 20 format(A,300g11.4)
