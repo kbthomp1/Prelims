@@ -256,38 +256,6 @@ contains
       stop 1
     end select
 
-    !phi(1,:) = x
-
   end subroutine solve
-
-  subroutine get_basis(bx,by,grid,icell)
-    integer,                intent(in)  :: icell
-    type(gridtype),         intent(in)  :: grid
-    real(dp), dimension(3), intent(out) :: bx, by
-  continue
-    bx(1:2) = grid%geoel(1:2,icell)
-    bx(3)   = -(bx(1) - bx(2))
-    by(1:2) = grid%geoel(3:4,icell)
-    by(3)   = -(by(1) - by(2))
-  end subroutine get_basis
-
-  subroutine get_face_normal(nx,ny,face_area,grid,iface)
-    integer,        intent(in) :: iface
-    type(gridtype), intent(in) :: grid
-    real(dp),      intent(out) :: nx, ny, face_area
-  continue
-    !compute unit normal vector
-    nx = grid%del(1,iface)/grid%del(3,iface)
-    ny = grid%del(2,iface)/grid%del(3,iface)
-    face_area = grid%del(3,iface)
-  end subroutine get_face_normal
-
-  function global_lift_coord(iface,grid) result(ilift)
-    integer,        intent(in)  :: iface
-    type(gridtype), intent(in)  :: grid
-    integer :: ilift
-  continue
-    ilift = grid%npoin + iface - grid%nface
-  end function global_lift_coord
 
 end module solver
