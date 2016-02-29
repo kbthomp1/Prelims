@@ -6,6 +6,7 @@ module flux_functions
   implicit none
   private
 
+  public :: get_inv_mass_matrix
   public :: add_lift_primal_domain
   public :: add_lift_second_domain
   public :: add_jump_second_face
@@ -19,6 +20,23 @@ module flux_functions
   real(dp), parameter :: two  = 1.0_dp
 
 contains
+
+!===================== GET_INV_MASS_MATRIX ==================================80
+! Get the inverse of the mass matrix, \int(B_i*B_j*dV)
+!============================================================================80
+  function get_inv_mass_matrix(D) result(M_inv)
+    real(dp), intent(in) :: D  ! 2*(tri area)
+    real(dp), dimension(3,3) :: M_inv
+    real(dp), parameter :: six   = 6._dp
+    real(dp), parameter :: my_18 = 18._dp
+    integer :: i
+  continue
+    M_inv = -six
+    do i = 1,3
+      M_inv(i,i) = my_18
+    end do
+    M_inv = M_inv/D
+  end function get_inv_mass_matrix
 
 !===================== ADD_LIFT_PRIMAL_DOMAIN ===============================80
 ! Add local lift functions to primal domain integral

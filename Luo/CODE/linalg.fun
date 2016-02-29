@@ -16,14 +16,14 @@ test jacobi_solve
 continue
 
   call setup_cube
-  ndof = 2*npoin
+  ndof = 2*grid%npoin
   allocate(lhspo(ndof,ndof))
   allocate(rhspo(ndof))
   allocate(phi(ndof))
   allocate(exact(ndof))
 
   exact = zero
-  exact(1:npoin) = [rand(1),rand(2),rand(3),rand(4)]
+  exact(1:grid%npoin) = [rand(1),rand(2),rand(3),rand(4)]
 
   lhspo = zero
   do i = 1, ndof
