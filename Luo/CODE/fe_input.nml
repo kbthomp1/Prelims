@@ -7,8 +7,8 @@
   uinf     = 1.0
   vinf     = 0.0
   
-  nsteps    = 3
-  tolerance = 1.E-05
+  nsteps    = 3000
+  tolerance = 1.E-12
 
   !lin_solver = "gauss seidel"
   lin_solver = "point jacobi"

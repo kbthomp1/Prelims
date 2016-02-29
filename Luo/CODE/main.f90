@@ -2,7 +2,7 @@ program main
 
   use kinddefs,      only : dp
   use gridtools,     only : gridtype, preprocess_grid
-  use solver,        only : get_lhspo, get_rhspo, get_soln, solve
+  use solver,        only : iterate, get_soln, init_freestream
   use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist
   use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps,   &
                             nvars, tec_dataname, lin_solver, tolerance
@@ -12,10 +12,11 @@ program main
   
   real(dp), dimension(:),   allocatable :: Vx, Vy, Vt
   
-  real(dp), dimension(:),   allocatable :: rhspo, phi
-  real(dp), dimension(:,:), allocatable :: lhspo
+  real(dp), dimension(:),   allocatable :: residual, phi
   
   type(gridtype) :: grid
+
+  real(dp) :: dt
 
   integer :: i
 
@@ -25,25 +26,21 @@ continue
   
   call preprocess_grid(grid,gridfile,nnode)
 
-! Number of degrees of freedom to solve
-  ndof = grid%npoin + grid%numfac
+! Number of degrees of freedom to solve in global system
+  ndof = grid%npoin
+  write(*,*) "CHECK: ndof = ",ndof
   
 ! Allocate the work arrays
-  allocate(lhspo(ndof,ndof))
-  allocate(rhspo(ndof))
+  allocate(residual(ndof))
   allocate(phi(ndof))
   allocate(Vx(grid%npoin))
   allocate(Vy(grid%npoin))
   allocate(Vt(grid%npoin))
-  
-! Formulate the load vector (RHS)
-  rhspo = get_rhspo(grid,ndof,uinf,vinf)
-  
-! Formulate the stiffness matrix (LHS)
-  lhspo = get_lhspo(grid,ndof)
-   
-  call solve(lin_solver,lhspo,rhspo,phi,ndof,nsteps,tolerance)
 
+  phi = init_freestream(ndof,grid,uinf,vinf)
+
+  call iterate(phi,grid,ndof,uinf,vinf)
+ 
   do i = 1, ndof
     write(*,*) "CHECK: phi = ",phi(i)
   end do

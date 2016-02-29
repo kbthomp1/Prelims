@@ -15,13 +15,12 @@ continue
 20 format(A,300g11.4)
 end test
 
-test check_lhspo
+test check_residual
 
   use test_helper
-  use solver, only : get_lhspo, get_rhspo, add_flux_contributions
+  use solver, only : add_flux_contributions
 
-  real(dp), dimension(:),   allocatable :: rhspo
-  real(dp), dimension(:,:), allocatable :: lhspo
+  real(dp), dimension(:),   allocatable :: residual, phi
 
   integer :: ndof, i, j
 
@@ -30,12 +29,12 @@ test check_lhspo
 continue
 
   call setup_cube
-  ndof = grid%npoin + grid%numfac
+  ndof = grid%npoin
   uinf = one; vinf = zero
-  allocate(lhspo(ndof,ndof))
-  allocate(rhspo(ndof))
-  lhspo = zero
-  rhspo = zero
+  allocate(residual(ndof))
+  allocate(phi(ndof))
+  phi = zero
+  residual = zero
 
   !lhspo = get_lhspo(grid,ndof)
   !rhspo = get_rhspo(grid,ndof,uinf,vinf)
@@ -44,13 +43,11 @@ continue
   !call add_lift_primal_domain(1,2,5,grid,lhspo)
   !call add_lift_second_domain(1,2,5,grid,lhspo)
   !call add_jump_second_face(1,2,5,grid,lhspo)
-  call add_flux_primal_face(1,2,5,grid,lhspo)
+  !call add_flux_primal_face(1,2,5,grid,phi,residual)
+  call add_boundary_flux(residual,grid,uinf,vinf)
 
   do i = 1, ndof
-    write(*,20) "CHECK: lhspo = ",(lhspo(i,j), j=1,ndof)
-  end do
-  do i = 1, ndof
-    write(*,20) "CHECK: rhspo = ",rhspo(i)
+    write(*,20) "CHECK: residual = ",residual(i)
   end do
 
 20 format(A,300g11.4)

@@ -8,6 +8,7 @@ module linalg
   public :: conjgrad
   public :: jacobi
   public :: gauss_seidel
+  public :: cholesky
 
   real(dp), parameter :: zero = 0.0_dp
   real(dp), parameter :: one  = 1.0_dp
@@ -100,7 +101,7 @@ contains
   
     x = zero
     
-    write(*,"(A,4x,A)") " Iteration","L2_norm"
+    !write(*,"(A,4x,A)") " Iteration","L2_norm"
 
     do n=1,nsteps
     
@@ -122,14 +123,16 @@ contains
 
       x = xnew
         
-      write(*,"(i6,6x,e12.5)") n, sqrt(resnorm)
+      !write(*,"(i6,6x,e12.5)") n, sqrt(resnorm)
     
       if(sqrt(resnorm)<tolerance) then
-        write(*,*) "Solution has converged at,",n,"iterations"
-        exit
+        !write(*,*) "Solution has converged at,",n,"iterations"
+        return !exit
       end if
     
     end do
+
+    write(*,*) "CHECK: Linear solver did not converge, res = ", sqrt(resnorm)
   
   end subroutine
   
@@ -194,5 +197,32 @@ contains
       end do outer_loop
   
     end subroutine gauss_seidel
+
+!============================== GAUSS_SEIDEL ================================80
+! Perform a cholesky decomposition of an SPD matrix
+!============================================================================80
+    subroutine cholesky(A,ndof)
+
+      integer,  intent(in) :: ndof
+      real(dp), dimension(ndof,ndof), intent(inout) :: A
+
+      integer :: j
+
+    continue
+
+      do j = 1,ndof
+
+        A(j,j) = sqrt(A(j,j) - dot_product(A(j,1:j-1),A(j,1:j-1)))
+
+        if (j < ndof) A(j+1:ndof,j) = (A(j+1:ndof,j) &
+                                 - matmul(A(j+1:ndof,1:j-1),A(j,1:j-1)))/A(j,j)
+
+      end do
+
+      do j = 1, ndof
+        A(j,j+1:ndof) = zero
+      end do
+
+  end subroutine cholesky
 
 end module linalg

@@ -6,13 +6,15 @@ module solver
   implicit none
   private
 
-  public :: get_lhspo
-  public :: get_rhspo
+  public :: get_residual
   public :: get_soln
   public :: solve
+  public :: iterate
+  public :: init_freestream
 
   !unit tests
   public :: add_flux_contributions
+  public :: invert_mass_matrix
 
   real(dp), parameter :: my_4th = 0.25_dp
 
@@ -22,6 +24,173 @@ module solver
   real(dp), parameter :: two  = 1.0_dp
 
 contains
+
+!======================= INIT_FREESTREAM ====================================80
+! Initialize phi to freestream
+!============================================================================80
+  function init_freestream(ndof,grid,uinf,vinf) result(phi)
+    type(gridtype),            intent(in)    :: grid
+    integer,                   intent(in)    :: ndof
+    real(dp),                  intent(in)    :: uinf,vinf
+    real(dp), dimension(ndof) :: phi
+    integer :: i
+  continue
+    do i = 1, ndof
+      phi(i) = zero
+    end do
+  end function init_freestream
+
+!============================ ITERATE =======================================80
+! Iterate to explicitly advance the solution in pseudo-time
+!============================================================================80
+  subroutine iterate(phi,grid,ndof,uinf,vinf)
+
+    type(gridtype),            intent(in)    :: grid
+    integer,                   intent(in)    :: ndof
+    real(dp),                  intent(in)    :: uinf,vinf
+    real(dp), dimension(ndof), intent(inout) :: phi
+    real(dp), dimension(ndof)  :: residual
+
+    real(dp) :: L2_error
+    real(dp), parameter :: dt = 1.E-6_dp
+
+    integer :: timestep, i
+
+  continue
+
+    do timestep = 1, 5
+      residual = get_residual(phi,grid,ndof,uinf,vinf)
+      L2_error = compute_L2(residual,ndof)
+      do i = 1, ndof
+        phi(i) = phi(i) + dt*residual(i)
+      end do
+
+      write(*,*) "CHECK: iter error = ",timestep,L2_error
+    end do
+
+  end subroutine
+
+!============================ GET_RESIDUAL ==================================80
+! Form the residual
+!============================================================================80
+  function get_residual(phi,grid,ndof,uinf,vinf) result(residual)
+    type(gridtype),            intent(in) :: grid
+    integer,                   intent(in) :: ndof
+    real(dp),                  intent(in) :: uinf,vinf
+    real(dp), dimension(ndof), intent(in) :: phi
+    real(dp), dimension(ndof)  :: residual
+  continue
+
+    residual = zero    
+
+    call compute_domain_integral(residual,phi,grid,ndof)
+    call add_flux_contributions(residual,phi,grid,ndof)
+    call add_boundary_flux(residual,grid,uinf,vinf)
+    call invert_mass_matrix(residual,grid,ndof)
+
+  end function get_residual
+
+!======================= INVERT_MASS_MATRIX  ================================80
+! Form and invert the mass matrix by solving with residual
+!============================================================================80
+  subroutine invert_mass_matrix(residual,grid,ndof)
+
+    use namelist_data,  only : lin_solver, nsteps, tolerance
+    use linalg,         only : cholesky
+    use flux_functions, only : get_mass_matrix
+
+    type(gridtype),         intent(in)    :: grid
+    integer,                intent(in)    :: ndof
+    real(dp), dimension(:), intent(inout) :: residual
+
+    real(dp), dimension(ndof)      :: res
+    real(dp), dimension(3,3)       :: m
+    real(dp), dimension(ndof,ndof) :: m_global, m_inv
+
+    real(dp) :: D
+    integer :: ip1, ip2, ip3, ip, jp, ielem
+    integer :: i, j
+
+    logical, save :: need_to_compute_m_inv = .true.
+
+  continue
+
+    if (need_to_compute_m_inv) then
+      need_to_compute_m_inv = .false.
+      m_global = zero
+
+      do ielem = 1, grid%nelem
+
+        ip1   = grid%inpoel(1,ielem)
+        ip2   = grid%inpoel(2,ielem)
+        ip3   = grid%inpoel(3,ielem)
+
+        D     = grid%geoel(5,ielem)
+
+        m = get_mass_matrix(D)
+
+        do i=1,grid%nnode
+          ip = grid%inpoel(i,ielem)
+          do j=1,grid%nnode
+            jp = grid%inpoel(j,ielem)
+            m_global(ip,jp) = m_global(ip,jp) + m(i,j)
+          end do
+        end do
+
+      end do
+
+      m_inv = m_global
+      call cholesky(m_inv,ndof)
+    end if
+
+
+
+    do i = 1, ndof
+      write(*,20) "CHECK: L = ",(m_global(i,j), j=1,ndof)
+    end do
+    do i = 1, ndof
+      do j = 1, ndof
+        m_global(i,j) = sum(m_inv(i,:)*m_inv(j,:))
+      end do
+    end do
+    do i = 1, ndof
+      write(*,20) "CHECK: L = ",(m_global(i,j), j=1,ndof)
+    end do
+    stop
+
+20 format(A,300g11.4)
+
+  end subroutine invert_mass_matrix
+
+!======================= ADD_BOUNDARY_FLUX ==================================80
+! Add flux from Neumann BC
+!============================================================================80
+  subroutine add_boundary_flux(residual,grid,uinf,vinf)
+
+    type(gridtype),         intent(in)    :: grid
+    real(dp),               intent(in)    :: uinf,vinf
+    real(dp), dimension(:), intent(inout) :: residual
+
+    real(dp) :: cface
+    integer :: iface, ip1, ip2
+
+  continue
+
+    do iface=1,grid%nface
+      if(grid%bcface(3,iface) == 4) then
+        
+        ip1 = grid%bcface(1,iface)
+        ip2 = grid%bcface(2,iface)
+        
+        cface = 0.5_dp*(uinf*grid%rface(1,iface) + vinf*grid%rface(2,iface))
+    
+        residual(ip1) = residual(ip1) + cface
+        residual(ip2) = residual(ip2) + cface
+    
+      end if
+    end do
+
+  end subroutine add_boundary_flux
 
 !============================= GET_RHSPO ====================================80
 ! Formulate the RHS load vector with neumann BC's
@@ -64,13 +233,12 @@ contains
 ! Form the global stiffness matrix
 !============================================================================80
 
-  function get_lhspo(grid,ndof) result (lhspo)
+  subroutine compute_domain_integral(residual,phi,grid,ndof)
 
-    integer, intent(in) :: ndof
-
-    type(gridtype), intent(in) :: grid
-
-    real(dp), dimension(ndof,ndof) :: lhspo
+    integer,                   intent(in)    :: ndof
+    type(gridtype),            intent(in)    :: grid
+    real(dp), dimension(ndof), intent(in)    :: phi
+    real(dp), dimension(ndof), intent(inout) :: residual
 
     real(dp), dimension(3) :: bx, by
 
@@ -79,11 +247,7 @@ contains
     integer :: ielem, ip1, ip2,ip3
     integer :: i, ip, j, jp
 
-    real(dp), parameter :: fact = one/12._dp
-
   continue
-
-  lhspo(1:ndof,1:ndof) = 0.0
 
     do ielem=1,grid%nelem
 
@@ -105,20 +269,19 @@ contains
         ip = grid%inpoel(i,ielem)
         do j=1,grid%nnode
           jp = grid%inpoel(j,ielem)
-          lhspo(ip,jp) = lhspo(ip,jp) + (bx(i)*bx(j) + by(i)*by(j))*area
+          residual(ip) = residual(ip) &
+                       + (bx(i)*bx(j)*phi(j) + by(i)*by(j)*phi(j))*area
         end do
       end do
 
     end do
 
-    call add_flux_contributions(lhspo,grid,ndof)
-
-  end function get_lhspo
+  end subroutine compute_domain_integral
 
 !===================== ADD_FLUX_CONTRIBUTIONS ===============================80
 ! Add the flux contributions to the LHS matrix
 !============================================================================80
-  subroutine add_flux_contributions(lhspo,grid,ndof)
+  subroutine add_flux_contributions(residual,phi,grid,ndof)
 
     use flux_functions, only : add_lift_primal_domain,  &
                                add_lift_second_domain,  & 
@@ -128,7 +291,8 @@ contains
     integer,        intent(in) :: ndof
     type(gridtype), intent(in) :: grid
 
-    real(dp), dimension(ndof,ndof), intent(inout) :: lhspo
+    real(dp), dimension(ndof), intent(in)    :: phi
+    real(dp), dimension(ndof), intent(inout) :: residual
 
     integer :: iface, icell, jcell
 
@@ -139,10 +303,10 @@ contains
       icell = grid%intfac(1,iface)  ! left cell
       jcell = grid%intfac(2,iface)  ! right cell
 
-      call add_lift_primal_domain(icell,jcell,iface,grid,lhspo)
-      call add_lift_second_domain(icell,jcell,iface,grid,lhspo)
-      call add_jump_second_face(icell,jcell,iface,grid,lhspo)
-      call add_flux_primal_face(icell,jcell,iface,grid,lhspo)
+      !call add_lift_primal_domain(icell,jcell,iface,grid,lhspo)
+      !call add_lift_second_domain(icell,jcell,iface,grid,lhspo)
+      !call add_jump_second_face(icell,jcell,iface,grid,lhspo)
+      call add_flux_primal_face(icell,jcell,iface,grid,phi,residual)
 
     end do interior_faces
 
@@ -228,7 +392,7 @@ contains
 !============================== SOLVE =======================================80
 ! Solve the linear system per user's specified method
 !============================================================================80
-  subroutine solve(lin_solver,lhspo,rhspo,phi,ndof,nsteps,tolerance)
+  subroutine solve(lin_solver,lhs,rhs,phi,ndof,nsteps,tolerance)
 
     use linalg, only : gauss_seidel,jacobi,conjgrad
 
@@ -236,9 +400,9 @@ contains
 
     integer, intent(in) :: nsteps, ndof
 
-    real(dp), dimension(ndof),      intent(in)    :: rhspo
+    real(dp), dimension(ndof),      intent(in)    :: rhs
     real(dp), dimension(ndof),      intent(inout) :: phi
-    real(dp), dimension(ndof,ndof), intent(in)    :: lhspo
+    real(dp), dimension(ndof,ndof), intent(in)    :: lhs
 
     real(dp), intent(in) :: tolerance
 
@@ -246,16 +410,32 @@ contains
 
     select case(lin_solver)
     case("conjugate gradient")
-      call conjgrad(lhspo,rhspo,phi,ndof,nsteps)
+      call conjgrad(lhs,rhs,phi,ndof,nsteps)
     case("point jacobi")
-      call jacobi(lhspo,rhspo,phi,ndof,nsteps,tolerance)
+      call jacobi(lhs,rhs,phi,ndof,nsteps,tolerance)
     case("gauss seidel")
-      call gauss_seidel(lhspo,rhspo,phi,ndof,nsteps,tolerance)
+      call gauss_seidel(lhs,rhs,phi,ndof,nsteps,tolerance)
     case default
       write(*,*) "Error: linear solver specified not available:",lin_solver
       stop 1
     end select
 
   end subroutine solve
+
+!============================ COMPUTE_L2 ====================================80
+! Compute the L2 error norm of the residual
+!============================================================================80
+  function compute_L2(residual,ndof) result(L2)
+    integer, intent(in) :: ndof
+    real(dp), dimension(ndof), intent(in) :: residual
+    real(dp) :: L2
+    integer :: i
+  continue
+    L2 = zero
+    do i = 1, ndof
+      L2 = L2 + residual(i)**2
+    end do
+    L2 = sqrt(L2)
+  end function compute_L2
 
 end module solver
