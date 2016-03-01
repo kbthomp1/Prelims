@@ -2,16 +2,13 @@
   gridfile = "testgrid"
   !gridfile = "channel.grid"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
-  nvars    = 2  !number of unknowns to solve for
-  neqns    = 1  !number of equations
   uinf     = 1.0
   vinf     = 0.0
-  
-  nsteps    = 3000
-  tolerance = 1.E-12
 
-  !lin_solver = "gauss seidel"
-  lin_solver = "point jacobi"
+  dt = 1.E-8
+
+  nsteps    = 300000000
+  tolerance = 1.E-12
 
   tec_dataname = "output.dat"
   !tec_dataname = "channel.dat"

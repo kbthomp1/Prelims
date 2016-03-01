@@ -28,41 +28,39 @@ contains
 !======================= INIT_FREESTREAM ====================================80
 ! Initialize phi to freestream
 !============================================================================80
-  function init_freestream(ndof,grid,uinf,vinf) result(phi)
-    type(gridtype),            intent(in)    :: grid
+  function init_freestream(ndof) result(phi)
     integer,                   intent(in)    :: ndof
-    real(dp),                  intent(in)    :: uinf,vinf
     real(dp), dimension(ndof) :: phi
     integer :: i
   continue
     do i = 1, ndof
-      phi(i) = zero
+      phi(i) = one
     end do
   end function init_freestream
 
 !============================ ITERATE =======================================80
 ! Iterate to explicitly advance the solution in pseudo-time
 !============================================================================80
-  subroutine iterate(phi,grid,ndof,uinf,vinf)
+  subroutine iterate(phi,grid,ndof)
+
+    use namelist_data, only : uinf, vinf, nsteps, dt
 
     type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
-    real(dp),                  intent(in)    :: uinf,vinf
     real(dp), dimension(ndof), intent(inout) :: phi
     real(dp), dimension(ndof)  :: residual
 
     real(dp) :: L2_error
-    real(dp), parameter :: dt = 1.E-6_dp
 
     integer :: timestep, i
 
   continue
 
-    do timestep = 1, 5
+    do timestep = 1, nsteps
       residual = get_residual(phi,grid,ndof,uinf,vinf)
       L2_error = compute_L2(residual,ndof)
       do i = 1, ndof
-        phi(i) = phi(i) + dt*residual(i)
+        phi(i) = phi(i) - dt*residual(i)
       end do
 
       write(*,*) "CHECK: iter error = ",timestep,L2_error
@@ -78,10 +76,12 @@ contains
     integer,                   intent(in) :: ndof
     real(dp),                  intent(in) :: uinf,vinf
     real(dp), dimension(ndof), intent(in) :: phi
-    real(dp), dimension(ndof)  :: residual
+    real(dp), dimension(ndof)  :: residual, lift
   continue
 
     residual = zero    
+
+    call compute_local_lift(phi,lift,grid,ndof)
 
     call compute_domain_integral(residual,phi,grid,ndof)
     call add_flux_contributions(residual,phi,grid,ndof)
@@ -91,32 +91,30 @@ contains
   end function get_residual
 
 !======================= INVERT_MASS_MATRIX  ================================80
-! Form and invert the mass matrix by solving with residual
+! Form and invert the mass matrix via cholesky solve
 !============================================================================80
   subroutine invert_mass_matrix(residual,grid,ndof)
 
-    use namelist_data,  only : lin_solver, nsteps, tolerance
-    use linalg,         only : cholesky
+    use linalg,         only : cholesky_decomp, cholesky_solve
     use flux_functions, only : get_mass_matrix
 
     type(gridtype),         intent(in)    :: grid
     integer,                intent(in)    :: ndof
     real(dp), dimension(:), intent(inout) :: residual
 
-    real(dp), dimension(ndof)      :: res
     real(dp), dimension(3,3)       :: m
-    real(dp), dimension(ndof,ndof) :: m_global, m_inv
+    real(dp), dimension(ndof,ndof) :: m_global
+
+    real(dp), dimension(:,:), allocatable, save :: m_inv
 
     real(dp) :: D
     integer :: ip1, ip2, ip3, ip, jp, ielem
     integer :: i, j
 
-    logical, save :: need_to_compute_m_inv = .true.
-
   continue
 
-    if (need_to_compute_m_inv) then
-      need_to_compute_m_inv = .false.
+    if (.not. allocated(m_inv)) then
+      allocate(m_inv(ndof,ndof))
       m_global = zero
 
       do ielem = 1, grid%nelem
@@ -140,25 +138,10 @@ contains
       end do
 
       m_inv = m_global
-      call cholesky(m_inv,ndof)
+      call cholesky_decomp(m_inv,ndof)
     end if
 
-
-
-    do i = 1, ndof
-      write(*,20) "CHECK: L = ",(m_global(i,j), j=1,ndof)
-    end do
-    do i = 1, ndof
-      do j = 1, ndof
-        m_global(i,j) = sum(m_inv(i,:)*m_inv(j,:))
-      end do
-    end do
-    do i = 1, ndof
-      write(*,20) "CHECK: L = ",(m_global(i,j), j=1,ndof)
-    end do
-    stop
-
-20 format(A,300g11.4)
+    call cholesky_solve(m_inv,residual,ndof)
 
   end subroutine invert_mass_matrix
 
@@ -192,47 +175,9 @@ contains
 
   end subroutine add_boundary_flux
 
-!============================= GET_RHSPO ====================================80
-! Formulate the RHS load vector with neumann BC's
+!======================== COMPUTE_DOMAIN_INTEGRALS ==========================80
+! compute the domain integrals and add them to the residual
 !============================================================================80
-  function get_rhspo(grid,ndof,uinf,vinf) result(rhspo)
-
-    type(gridtype), intent(in) :: grid
-
-    integer, intent(in) :: ndof
-
-    real(dp), intent(in) :: uinf,vinf
-  
-    real(dp), dimension(ndof) :: rhspo
-
-    real(dp) :: cface
-
-    integer :: ip1, ip2, iface
-    
-  continue 
-  
-    rhspo = zero
-    
-    do iface=1,grid%nface
-      if(grid%bcface(3,iface) == 4) then
-        
-        ip1 = grid%bcface(1,iface)
-        ip2 = grid%bcface(2,iface)
-        
-        cface = 0.5_dp*(uinf*grid%rface(1,iface) + vinf*grid%rface(2,iface))
-    
-        rhspo(ip1) = rhspo(ip1) + cface
-        rhspo(ip2) = rhspo(ip2) + cface
-    
-      end if
-    end do
-  
-  end function get_rhspo
-
-!================================ GET_LHSPO =================================80
-! Form the global stiffness matrix
-!============================================================================80
-
   subroutine compute_domain_integral(residual,phi,grid,ndof)
 
     integer,                   intent(in)    :: ndof
@@ -249,7 +194,7 @@ contains
 
   continue
 
-    do ielem=1,grid%nelem
+    do ielem = 1, grid%nelem
 
       ip1   = grid%inpoel(1,ielem)
       ip2   = grid%inpoel(2,ielem)
@@ -278,8 +223,34 @@ contains
 
   end subroutine compute_domain_integral
 
+!===================== COMPUTE_LOCAL_LIFT ===================================80
+! Compute the local lifting function at interior faces
+!============================================================================80
+  subroutine compute_local_lift(phi,lift,grid,ndof)
+
+    integer,        intent(in) :: ndof
+    type(gridtype), intent(in) :: grid
+
+    real(dp), dimension(ndof), intent(in)  :: phi
+    real(dp), dimension(ndof), intent(out) :: lift
+
+    integer :: iface, icell, jcell
+  continue
+
+    interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
+
+      i = iface - grid%nface
+      icell = grid%intfac(1,iface)  ! left cell
+      jcell = grid%intfac(2,iface)  ! right cell
+
+      lift(i) = 
+
+    end do interior_faces
+
+  end subroutine compute_local_lift
+
 !===================== ADD_FLUX_CONTRIBUTIONS ===============================80
-! Add the flux contributions to the LHS matrix
+! Add the flux contributions to the residual 
 !============================================================================80
   subroutine add_flux_contributions(residual,phi,grid,ndof)
 

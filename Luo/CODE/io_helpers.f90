@@ -19,10 +19,10 @@ contains
   subroutine read_namelist
 
     use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps, &
-                              tec_dataname, lin_solver, tolerance, nvars, neqns
+                              tec_dataname, lin_solver, tolerance, dt
 
     namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
-                        lin_solver, tolerance, nvars, neqns
+                        lin_solver, tolerance, dt
 
   continue
 
@@ -32,11 +32,8 @@ contains
     !Number of verticies per element (triangles, quads, etc.)
     nnode = 3
 
-    !Number of unknowns to solve for
-    nvars = 1
-
-    !Number of equations
-    neqns = 1
+    !Timestep to explicitly advance solution in pseudo-time
+    dt = 1.E-6_dp
 
     !X-direction freestream velocity
     uinf = 1.0_dp

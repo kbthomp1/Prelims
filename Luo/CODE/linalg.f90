@@ -8,7 +8,8 @@ module linalg
   public :: conjgrad
   public :: jacobi
   public :: gauss_seidel
-  public :: cholesky
+  public :: cholesky_decomp
+  public :: cholesky_solve
 
   real(dp), parameter :: zero = 0.0_dp
   real(dp), parameter :: one  = 1.0_dp
@@ -198,10 +199,10 @@ contains
   
     end subroutine gauss_seidel
 
-!============================== GAUSS_SEIDEL ================================80
+!============================ CHOLESKY_DECOMP ===============================80
 ! Perform a cholesky decomposition of an SPD matrix
 !============================================================================80
-    subroutine cholesky(A,ndof)
+    subroutine cholesky_decomp(A,ndof)
 
       integer,  intent(in) :: ndof
       real(dp), dimension(ndof,ndof), intent(inout) :: A
@@ -219,10 +220,44 @@ contains
 
       end do
 
+      ! Unnecessary, but useful for debugging
       do j = 1, ndof
         A(j,j+1:ndof) = zero
       end do
 
-  end subroutine cholesky
+  end subroutine cholesky_decomp
+
+!============================ CHOLESKY_SOLVE ================================80
+! Solve a system with a cholesky decomposed matrix
+!============================================================================80
+  subroutine cholesky_solve(L,b,ndof)
+    integer,                        intent(in)    :: ndof
+    real(dp), dimension(ndof,ndof), intent(in)    :: L
+    real(dp), dimension(ndof),      intent(inout) :: b
+
+    real(dp), dimension(ndof) :: y
+    real(dp) :: sum
+    integer  :: i, j
+  continue
+
+    ! solve L*y = b -> forward substitution
+    do i = 1, ndof
+      sum = b(i)
+      do j = 1, i-1
+        sum = sum - L(i,j)*y(j)
+      end do
+      y(i) = sum/L(i,i)
+    end do
+
+    ! solve L^t*x = y -> backward substitution
+    do i = ndof, 1, -1
+      sum = y(i)
+      do j = i+1,ndof
+        sum = sum - L(i,j)*b(j)
+      end do
+      b(i) = sum/L(i,i)
+    end do
+
+  end subroutine cholesky_solve
 
 end module linalg

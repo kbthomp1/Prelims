@@ -4,8 +4,8 @@ program main
   use gridtools,     only : gridtype, preprocess_grid
   use solver,        only : iterate, get_soln, init_freestream
   use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist
-  use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps,   &
-                            nvars, tec_dataname, lin_solver, tolerance
+  use namelist_data, only : gridfile, nnode, tec_dataname
+
   implicit none
   
   integer :: ndof
@@ -15,8 +15,6 @@ program main
   real(dp), dimension(:),   allocatable :: residual, phi
   
   type(gridtype) :: grid
-
-  real(dp) :: dt
 
   integer :: i
 
@@ -37,9 +35,9 @@ continue
   allocate(Vy(grid%npoin))
   allocate(Vt(grid%npoin))
 
-  phi = init_freestream(ndof,grid,uinf,vinf)
+  phi = init_freestream(ndof)
 
-  call iterate(phi,grid,ndof,uinf,vinf)
+  call iterate(phi,grid,ndof)
  
   do i = 1, ndof
     write(*,*) "CHECK: phi = ",phi(i)
