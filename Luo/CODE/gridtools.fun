@@ -1,16 +1,21 @@
 test_suite gridtools
 
-test interior_face
-
+setup
   use test_helper
+  logical, save :: init = .true.
+  if(init) then
+    call setup_cube
+    ndof = grid%nnode*grid%nelem
+    init = .false.
+  end if
+end setup
 
+test check_local_global_map
+  use test_helper
+  integer :: dof
 continue
-
-  call setup_cube
-
-  write(*,*) "CHECK: intface = ",grid%intfac(3:4,5)
-  write(*,*) "CHECK: normal  = ",grid%del(:,5)
-
+  dof = get_global_dof(3,1,grid)
+  assert_equal(dof,3)
 end test
 
 end test_suite

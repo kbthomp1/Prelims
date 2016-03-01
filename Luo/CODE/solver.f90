@@ -1,7 +1,7 @@
 module solver
 
   use kinddefs,  only : dp
-  use gridtools, only : gridtype
+  use gridtools, only : gridtype, get_global_dof
 
   implicit none
   private
@@ -13,6 +13,7 @@ module solver
   public :: init_freestream
 
   !unit tests
+  public :: compute_domain_integral
   public :: add_flux_contributions
   public :: invert_mass_matrix
 
@@ -84,8 +85,7 @@ contains
     call compute_local_lift(phi,lift,grid,ndof)
 
     call compute_domain_integral(residual,phi,grid,ndof)
-    call add_flux_contributions(residual,phi,grid,ndof)
-    call add_boundary_flux(residual,grid,uinf,vinf)
+    call add_flux_contributions(residual,phi,grid,ndof,uinf,vinf)
     call invert_mass_matrix(residual,grid,ndof)
 
   end function get_residual
@@ -95,85 +95,45 @@ contains
 !============================================================================80
   subroutine invert_mass_matrix(residual,grid,ndof)
 
-    use linalg,         only : cholesky_decomp, cholesky_solve
-    use flux_functions, only : get_mass_matrix
+    use flux_functions, only : get_mass_matrix_inv
 
     type(gridtype),         intent(in)    :: grid
     integer,                intent(in)    :: ndof
     real(dp), dimension(:), intent(inout) :: residual
 
-    real(dp), dimension(3,3)       :: m
-    real(dp), dimension(ndof,ndof) :: m_global
+    real(dp), dimension(ndof) :: res
 
-    real(dp), dimension(:,:), allocatable, save :: m_inv
+    real(dp), dimension(:,:,:), allocatable, save :: m_inv
 
-    real(dp) :: D
-    integer :: ip1, ip2, ip3, ip, jp, ielem
-    integer :: i, j
+    real(dp) :: D, row_sum
+    integer :: ielem, i, j, k
 
   continue
 
     if (.not. allocated(m_inv)) then
-      allocate(m_inv(ndof,ndof))
-      m_global = zero
-
+      allocate(m_inv(3,3,grid%nelem))
       do ielem = 1, grid%nelem
-
-        ip1   = grid%inpoel(1,ielem)
-        ip2   = grid%inpoel(2,ielem)
-        ip3   = grid%inpoel(3,ielem)
-
-        D     = grid%geoel(5,ielem)
-
-        m = get_mass_matrix(D)
-
-        do i=1,grid%nnode
-          ip = grid%inpoel(i,ielem)
-          do j=1,grid%nnode
-            jp = grid%inpoel(j,ielem)
-            m_global(ip,jp) = m_global(ip,jp) + m(i,j)
-          end do
-        end do
-
+        D = grid%geoel(5,ielem)
+        m_inv(:,:,ielem) = get_mass_matrix_inv(d)
       end do
-
-      m_inv = m_global
-      call cholesky_decomp(m_inv,ndof)
     end if
 
-    call cholesky_solve(m_inv,residual,ndof)
-
-  end subroutine invert_mass_matrix
-
-!======================= ADD_BOUNDARY_FLUX ==================================80
-! Add flux from Neumann BC
-!============================================================================80
-  subroutine add_boundary_flux(residual,grid,uinf,vinf)
-
-    type(gridtype),         intent(in)    :: grid
-    real(dp),               intent(in)    :: uinf,vinf
-    real(dp), dimension(:), intent(inout) :: residual
-
-    real(dp) :: cface
-    integer :: iface, ip1, ip2
-
-  continue
-
-    do iface=1,grid%nface
-      if(grid%bcface(3,iface) == 4) then
-        
-        ip1 = grid%bcface(1,iface)
-        ip2 = grid%bcface(2,iface)
-        
-        cface = 0.5_dp*(uinf*grid%rface(1,iface) + vinf*grid%rface(2,iface))
-    
-        residual(ip1) = residual(ip1) + cface
-        residual(ip2) = residual(ip2) + cface
-    
-      end if
+    ! matrix vector product of the inverse mass matrix and residual
+    do ielem = 1, grid%nelem
+      do i = 1, grid%nnode
+        row_sum = zero
+        do k = 1, grid%nnode
+          j = (ielem-1)*grid%nnode + k
+          row_sum = row_sum + m_inv(i,k,ielem)*residual(j)
+        end do
+        j = (ielem-1)*grid%nnode + i
+        res(j) = row_sum
+      end do
     end do
 
-  end subroutine add_boundary_flux
+    residual = res
+
+  end subroutine invert_mass_matrix
 
 !======================== COMPUTE_DOMAIN_INTEGRALS ==========================80
 ! compute the domain integrals and add them to the residual
@@ -189,16 +149,11 @@ contains
 
     real(dp) :: area, D
 
-    integer :: ielem, ip1, ip2,ip3
-    integer :: i, ip, j, jp
+    integer :: ielem, i, ip, j, jp, global_node
 
   continue
 
     do ielem = 1, grid%nelem
-
-      ip1   = grid%inpoel(1,ielem)
-      ip2   = grid%inpoel(2,ielem)
-      ip3   = grid%inpoel(3,ielem)
 
       bx(1) = grid%geoel(1,ielem)
       bx(2) = grid%geoel(2,ielem)
@@ -211,11 +166,13 @@ contains
       area = half*D
 
       do i=1,grid%nnode
-        ip = grid%inpoel(i,ielem)
+        global_node = grid%inpoel(i,ielem)
+        ip = get_global_dof(global_node,ielem,grid)
         do j=1,grid%nnode
-          jp = grid%inpoel(j,ielem)
+          global_node = grid%inpoel(j,ielem)
+          jp = get_global_dof(global_node,ielem,grid)
           residual(ip) = residual(ip) &
-                       + (bx(i)*bx(j)*phi(j) + by(i)*by(j)*phi(j))*area
+                       + (bx(i)*bx(j)*phi(jp) + by(i)*by(j)*phi(jp))*area
         end do
       end do
 
@@ -234,7 +191,7 @@ contains
     real(dp), dimension(ndof), intent(in)  :: phi
     real(dp), dimension(ndof), intent(out) :: lift
 
-    integer :: iface, icell, jcell
+    integer :: iface, icell, jcell, i
   continue
 
     interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
@@ -243,7 +200,7 @@ contains
       icell = grid%intfac(1,iface)  ! left cell
       jcell = grid%intfac(2,iface)  ! right cell
 
-      lift(i) = 
+      lift(i) = one
 
     end do interior_faces
 
@@ -252,15 +209,17 @@ contains
 !===================== ADD_FLUX_CONTRIBUTIONS ===============================80
 ! Add the flux contributions to the residual 
 !============================================================================80
-  subroutine add_flux_contributions(residual,phi,grid,ndof)
+  subroutine add_flux_contributions(residual,phi,grid,ndof,uinf,vinf)
 
     use flux_functions, only : add_lift_primal_domain,  &
                                add_lift_second_domain,  & 
                                add_jump_second_face,    &
-                               add_flux_primal_face
+                               add_flux_primal_face,    &
+                               add_boundary_flux
 
     integer,        intent(in) :: ndof
     type(gridtype), intent(in) :: grid
+    real(dp),       intent(in) :: uinf,vinf
 
     real(dp), dimension(ndof), intent(in)    :: phi
     real(dp), dimension(ndof), intent(inout) :: residual
@@ -281,6 +240,8 @@ contains
 
     end do interior_faces
 
+    call add_boundary_flux(residual,grid,uinf,vinf)
+
   end subroutine add_flux_contributions
 
 !============================ GET_SOLN ======================================80
@@ -296,16 +257,17 @@ contains
 ! NOTE: since B_1 + B_2 + B_3 = 1, a/b_3 = 1 - a/b_2 - a/b_1 
 !============================================================================80
 
-  subroutine get_soln(Vx,Vy,Vt,phi,grid)
+  subroutine get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
 
     type(gridtype), intent(in) :: grid
 
     real(dp), dimension(:),   intent(in)  :: phi
-    real(dp), dimension(:),   intent(out) :: Vx, Vy, Vt
+    real(dp), dimension(:),   intent(out) :: Vx, Vy, Vt, nodal_phi
 
-    real(dp), dimension(grid%npoin) :: Vxarea, Vyarea, area
+    real(dp), dimension(3)          :: phi_local
+    real(dp), dimension(grid%npoin) :: Vxarea, Vyarea, phiarea,area
 
-    integer :: ielem, ipoin, ip1, ip2, ip3
+    integer :: ielem, ipoin, ip1, ip2, ip3, dof1, dof2, dof3
 
     real(dp) :: local_area, Vx_local, Vy_local
 
@@ -322,19 +284,31 @@ contains
 
     do ielem=1,grid%nelem
 
+      dof1=get_global_dof(grid%inpoel(1,ielem),ielem,grid)
+      dof2=get_global_dof(grid%inpoel(2,ielem),ielem,grid)
+      dof3=get_global_dof(grid%inpoel(3,ielem),ielem,grid)
+
       ip1=grid%inpoel(1,ielem)
       ip2=grid%inpoel(2,ielem)
       ip3=grid%inpoel(3,ielem)
 
       local_area = half*grid%geoel(5,ielem)
 
-      Vx_local = (grid%geoel(1,ielem)*(phi(ip1)-phi(ip3))       &
-                + grid%geoel(2,ielem)*(phi(ip2)-phi(ip3)))      &
+      phi_local(1) = phi(dof1)*local_area
+      phi_local(2) = phi(dof2)*local_area
+      phi_local(3) = phi(dof3)*local_area
+
+      Vx_local = (grid%geoel(1,ielem)*(phi(dof1)-phi(dof3))       &
+                + grid%geoel(2,ielem)*(phi(dof2)-phi(dof3)))      &
                 * local_area
 
-      Vy_local = (grid%geoel(3,ielem)*(phi(ip1)-phi(ip3))       &
-                + grid%geoel(4,ielem)*(phi(ip2)-phi(ip3)))      &
+      Vy_local = (grid%geoel(3,ielem)*(phi(dof1)-phi(dof3))       &
+                + grid%geoel(4,ielem)*(phi(dof2)-phi(dof3)))      &
                 * local_area
+
+      phiarea(ip1) = phiarea(ip1)+phi_local(1)
+      phiarea(ip2) = phiarea(ip2)+phi_local(2)
+      phiarea(ip3) = phiarea(ip3)+phi_local(3)
 
       Vxarea(ip1) = Vxarea(ip1)+Vx_local
       Vxarea(ip2) = Vxarea(ip2)+Vx_local
@@ -351,6 +325,8 @@ contains
     end do
 
     do ipoin=1,grid%npoin
+
+      phiarea(ipoin) = phiarea(ipoin)/area(ipoin)
 
       Vx(ipoin) = Vxarea(ipoin)/area(ipoin)
       Vy(ipoin) = Vyarea(ipoin)/area(ipoin)

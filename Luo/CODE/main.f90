@@ -12,7 +12,7 @@ program main
   
   real(dp), dimension(:),   allocatable :: Vx, Vy, Vt
   
-  real(dp), dimension(:),   allocatable :: residual, phi
+  real(dp), dimension(:),   allocatable :: residual, phi, nodal_phi
   
   type(gridtype) :: grid
 
@@ -25,12 +25,13 @@ continue
   call preprocess_grid(grid,gridfile,nnode)
 
 ! Number of degrees of freedom to solve in global system
-  ndof = grid%npoin
+  ndof = grid%nnode*grid%nelem
   write(*,*) "CHECK: ndof = ",ndof
   
 ! Allocate the work arrays
   allocate(residual(ndof))
   allocate(phi(ndof))
+  allocate(nodal_phi(grid%npoin))
   allocate(Vx(grid%npoin))
   allocate(Vy(grid%npoin))
   allocate(Vt(grid%npoin))
@@ -43,7 +44,7 @@ continue
     write(*,*) "CHECK: phi = ",phi(i)
   end do
 
-  call get_soln(Vx,Vy,Vt,phi,grid)
+  call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
   
   call write_tec_volume(tec_dataname,grid,phi,Vx,Vy,Vt)
   call write_tec_surface(grid,Vt)

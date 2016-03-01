@@ -5,9 +5,9 @@
   uinf     = 1.0
   vinf     = 0.0
 
-  dt = 1.E-8
+  dt = 1.E-3
 
-  nsteps    = 300000000
+  nsteps    = 3000
   tolerance = 1.E-12
 
   tec_dataname = "output.dat"

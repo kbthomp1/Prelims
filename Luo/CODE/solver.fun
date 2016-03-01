@@ -2,26 +2,37 @@ test_suite solver
 
   integer, parameter :: dp = selected_real_kind(P=15)
 
-test mass_matrix_inversion
-
+setup
   use test_helper
+  logical, save :: init = .true.
+  if(init) then
+    call setup_cube
+    ndof = grid%nnode*grid%nelem
+    init = .false.
+  end if
+end setup
 
-  real(dp), dimension(:),   allocatable :: residual, phi
-
-  integer :: ndof, i, j
-
-  real(dp) :: uinf, vinf
-
+test domain_integral
+  use test_helper
+  real(dp), dimension(ndof) :: phi
+  real(dp), dimension(ndof) :: residual
+  integer :: i
 continue
+  residual = zero
+  do i = 1, ndof
+    phi(i) = real(i,dp)
+  end do
+  call compute_domain_integral(residual,phi,grid,ndof)
+  call wrt(residual,"residual")
+end test
 
-  call setup_cube
-  ndof = grid%npoin
-  uinf = one; vinf = zero
-  allocate(residual(ndof))
-  allocate(phi(ndof))
-
+test mass_matrix_inversion
+  use test_helper
+  real(dp), dimension(ndof) :: residual
+continue
+  residual = one
   call invert_mass_matrix(residual,grid,ndof)
-
+  call wrt(residual,"residual")
 end test
 
 !test check_residual

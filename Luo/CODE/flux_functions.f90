@@ -1,16 +1,17 @@
 module flux_functions
 
   use kinddefs,  only : dp
-  use gridtools, only : gridtype
+  use gridtools, only : gridtype, get_global_dof
 
   implicit none
   private
 
-  public :: get_mass_matrix
+  public :: get_mass_matrix_inv
   public :: add_lift_primal_domain
   public :: add_lift_second_domain
   public :: add_jump_second_face
   public :: add_flux_primal_face
+  public :: add_boundary_flux
 
   real(dp), parameter :: my_4th = 0.25_dp
 
@@ -24,17 +25,19 @@ contains
 !===================== GET_MASS_MATRIX ==================================80
 ! Get the inverse of the mass matrix, \int(B_i*B_j*dV)
 !============================================================================80
-  function get_mass_matrix(D) result(M)
+  function get_mass_matrix_inv(D) result(m_inv)
     real(dp), intent(in) :: D  ! 2*(tri area)
-    real(dp), dimension(3,3) :: M
-    real(dp), parameter :: my_24th = 1._dp/24._dp
+    real(dp), dimension(3,3) :: m_inv
+    real(dp), parameter :: my_6  = 6._dp
+    real(dp), parameter :: my_18 = 18._dp
     integer :: i
   continue
-    M = D*my_24th
+    m_inv = -my_6
     do i = 1,3
-      M(i,i) = two*D*my_24th
+      m_inv(i,i) = my_18
     end do
-  end function get_mass_matrix
+    m_inv = m_inv/D
+  end function get_mass_matrix_inv
 
 !===================== ADD_LIFT_PRIMAL_DOMAIN ===============================80
 ! Add local lift functions to primal domain integral
@@ -137,8 +140,8 @@ contains
     real(dp), dimension(3) :: bx, by, grad
 
     integer, dimension(2) :: cells
-    integer :: ip, jp, i, l
-    integer :: cell
+    integer :: ip, i, l
+    integer :: cell, inode, idof, jdof
 
     real(dp) :: nx, ny, face_area, flux, phi_local
 
@@ -159,28 +162,60 @@ contains
       ! half of averaged gradient
       grad(1:3) = half*(bx(1:3)*nx + by(1:3)*ny)
 
-      ! local nodal values
-
       ! integrated coefficients of phi
       do i = 1,grid%nnode
-        phi_local = phi(grid%inpoel(i,cell))
+        ip = grid%inpoel(i,icell)
+        phi_local = phi(get_global_dof(ip,icell,grid))
         flux = flux + phi_local*grad(i)*half*face_area
       end do
 
     end do left_right_average
 
-      ! integrated coefficient of local lift
-      !lift_coef = my_4th*face_area
+    ! integrated coefficient of local lift
+    !lift_coef = my_4th*face_area
 
-    do i=1,grid%nnode
-      ip = grid%inpoel(i,icell)
-      jp = grid%inpoel(i,jcell)
-      !lhspo(ip,ilift) = lhspo(ip,ilift) + sgn(s)*lift_coef
-      residual(ip) = residual(ip) + flux
-      residual(jp) = residual(ip) - flux
-    end do
+    loop_face_nodes: do i = 3,4
+      inode = grid%intfac(i,iface)
+      idof = get_global_dof(inode,icell,grid)
+      jdof = get_global_dof(inode,jcell,grid)
+      residual(idof) = residual(idof) + flux  
+      residual(jdof) = residual(jdof) - flux  !jcell has negative normal
+    end do loop_face_nodes
 
   end subroutine add_flux_primal_face
+
+!======================= ADD_BOUNDARY_FLUX ==================================80
+! Add flux from Neumann BC
+!============================================================================80
+  subroutine add_boundary_flux(residual,grid,uinf,vinf)
+
+    type(gridtype),         intent(in)    :: grid
+    real(dp),               intent(in)    :: uinf,vinf
+    real(dp), dimension(:), intent(inout) :: residual
+
+    real(dp) :: cface, nx, ny, face_area
+    integer :: iface, ip1, ip2, icell
+
+  continue
+
+    do iface=1,grid%nface
+      if(grid%intfac(5,iface) == 4) then
+       
+        ! map the boundary nodes to the solution node ordering
+        icell = grid%intfac(2,iface) ! interior cell
+        ip1 = get_global_dof(grid%intfac(3,iface),icell,grid)
+        ip2 = get_global_dof(grid%intfac(4,iface),icell,grid)
+
+        call get_face_normal(nx,ny,face_area,grid,iface)
+        cface = 0.5_dp*(uinf*nx + vinf*ny)*face_area
+    
+        residual(ip1) = residual(ip1) + cface
+        residual(ip2) = residual(ip2) + cface
+    
+      end if
+    end do
+
+  end subroutine add_boundary_flux
 
   function global_lift_coord(iface,grid) result(ilift)
     integer,        intent(in)  :: iface

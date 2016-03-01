@@ -7,13 +7,14 @@ module gridtools
 
   public :: readgrid_lou
   public :: basis_function
-  public :: face_norm
+  public :: set_bc
   public :: getesuel
   public :: getesup
   public :: getnormal
   public :: getintfac
   public :: preprocess_grid
   public :: gridtype
+  public :: get_global_dof
 
   type :: gridtype
 
@@ -28,10 +29,10 @@ module gridtools
 
     real(dp), dimension(:,:), allocatable :: coord  ! (x,y) coordinates
     real(dp), dimension(:,:), allocatable :: geoel  ! basis function info
-    real(dp), dimension(:,:), allocatable :: rface  ! boundary face normal
     real(dp), dimension(:,:), allocatable :: del    ! interior face normal
   
     integer, dimension(:),    allocatable :: esup1, esup2 ! helper arrays
+    integer, dimension(:,:),  allocatable :: gdof   ! dofs on a face
     integer, dimension(:,:),  allocatable :: inpoel ! points on an element
     integer, dimension(:,:),  allocatable :: bcface ! boundary face nodes
     integer, dimension(:,:),  allocatable :: esuel  ! helper array
@@ -61,9 +62,6 @@ contains
   ! assemble geometry related matricies
     call basis_function(grid%nelem, grid%geoel, grid%inpoel, grid%coord)
 
-    call face_norm(grid%rface, grid%coord, grid%bcface, &
-                   grid%nface)
-
     call getesup(grid%inpoel, grid%npoin, grid%nelem,  &
                  grid%nnode,  grid%esup1, grid%esup2)
 
@@ -75,8 +73,12 @@ contains
                    grid%nfael, grid%numfac, grid%nface, &
                    grid%intfac)
 
+    call set_bc(grid%intfac, grid%bcface, grid%nface)
+
     call getnormal(grid%intfac, grid%coord, grid%numfac, &
                    grid%nface,  grid%del)
+
+    call map_gdof(grid)
 
   end subroutine preprocess_grid
 
@@ -129,7 +131,8 @@ contains
     do j=1,grid%nface
       read(12,*) face_dummy,(grid%bcface(i,j),i=1,grid%ndimn+1)
     end do
-  
+ 
+    close(12)
   end subroutine
 
 !======================= SETUP_GRID_ARRAYS ==================================80
@@ -144,7 +147,6 @@ contains
     allocate(grid%geoel(5,grid%nelem))
     allocate(grid%esup1(grid%npoin*6))
     allocate(grid%esup2(grid%npoin+1))
-    allocate(grid%rface(grid%ndimn,grid%nface))
     allocate(grid%esuel(grid%nfael,grid%nelem))
     
   end subroutine setup_grid_arrays
@@ -214,35 +216,30 @@ contains
     end subroutine
   
 !=========================== SET_BC =========================================80
-! Calculate normal vector at each interface
+! Set the boundary condition flag in the intfac array
 !============================================================================80
-  subroutine face_norm(rface,coord,bcface,nface)
+  subroutine set_bc(intfac, bcface, nface)
 
-    integer,                 intent(in) :: nface
-    integer, dimension(:,:), intent(in) :: bcface
-
-    real(dp), dimension(:,:), intent(in) :: coord
-    real(dp), dimension(:,:), intent(out) :: rface
+    integer,                 intent(in)    :: nface
+    integer, dimension(:,:), intent(in)    :: bcface
+    integer, dimension(:,:), intent(inout) :: intfac
     
-    integer :: ip1,ip2,iface
-
-    real(dp) :: x1,x2,y1,y2
+    integer :: bc1, bc2, f1, f2, iface, ibc
 
   continue
     
-    do iface=1,nface
-      ip1  = bcface(1,iface)
-      ip2  = bcface(2,iface)
-      
-      x1   = coord(1,ip1)
-      x2   = coord(1,ip2)
-    
-      y1   = coord(2,ip1)
-      y2   = coord(2,ip2)
-      
-      rface(1,iface) = y2-y1
-      rface(2,iface) = x1-x2
-    end do
+    loop_bcfaces: do ibc = 1, nface
+      bc1 = bcface(1,ibc)
+      bc2 = bcface(2,ibc)
+      loop_intfac: do iface = 1, nface
+        f1  = intfac(3,iface)
+        f2  = intfac(4,iface)
+        if ( (bc1 == f1 .and. bc2 == f2) .or. (bc1 == f2 .and. bc2 == f1) ) then
+          intfac(5,iface) = bcface(3,ibc)
+          exit
+        end if
+      end do loop_intfac
+    end do loop_bcfaces
   
   end subroutine
 
@@ -472,5 +469,37 @@ contains
     end do
   
   end subroutine
+
+  !========================================================================
+  
+  subroutine map_gdof(grid)
+    type(gridtype), intent(inout) :: grid
+    integer :: ielem, ip, i
+  continue
+    allocate(grid%gdof(grid%npoin,grid%nelem))
+    grid%gdof = 0
+    do ielem = 1, grid%nelem
+      do i = 1, grid%nnode
+        ip = grid%inpoel(i,ielem)
+        grid%gdof(ip,ielem) = (ielem-1)*3 + i
+      end do
+    end do
+  end subroutine map_gdof
+
+!============================ GET_GLOBAL_DOF ================================80
+! Get the global dof number in solution
+!============================================================================80
+  function get_global_dof(node,elem,grid) result(global_dof)
+    type(gridtype), intent(in) :: grid
+    integer,        intent(in) :: node,elem
+    integer :: global_dof
+  continue
+    global_dof = grid%gdof(node,elem)
+    if ( global_dof == 0 ) then
+      write(*,20) "Error: could not match node", node," on element", elem
+      stop
+    end if
+20 format(2(A,x,i5))
+  end function
 
 end module gridtools
