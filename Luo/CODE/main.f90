@@ -16,8 +16,6 @@ program main
   
   type(gridtype) :: grid
 
-  integer :: i
-
 continue
 
   call read_namelist
@@ -26,7 +24,6 @@ continue
 
 ! Number of degrees of freedom to solve in global system
   ndof = grid%nnode*grid%nelem
-  write(*,*) "CHECK: ndof = ",ndof
   
 ! Allocate the work arrays
   allocate(residual(ndof))
@@ -39,10 +36,6 @@ continue
   phi = init_freestream(ndof)
 
   call iterate(phi,grid,ndof)
- 
-  do i = 1, ndof
-    write(*,*) "CHECK: phi = ",phi(i)
-  end do
 
   call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
   

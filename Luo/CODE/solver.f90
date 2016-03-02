@@ -326,7 +326,7 @@ contains
 
     do ipoin=1,grid%npoin
 
-      phiarea(ipoin) = phiarea(ipoin)/area(ipoin)
+      nodal_phi(ipoin) = phiarea(ipoin)/area(ipoin)
 
       Vx(ipoin) = Vxarea(ipoin)/area(ipoin)
       Vy(ipoin) = Vyarea(ipoin)/area(ipoin)

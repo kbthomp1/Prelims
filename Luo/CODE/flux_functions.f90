@@ -209,8 +209,8 @@ contains
         call get_face_normal(nx,ny,face_area,grid,iface)
         cface = 0.5_dp*(uinf*nx + vinf*ny)*face_area
     
-        residual(ip1) = residual(ip1) + cface
-        residual(ip2) = residual(ip2) + cface
+        residual(ip1) = residual(ip1) - cface
+        residual(ip2) = residual(ip2) - cface
     
       end if
     end do
