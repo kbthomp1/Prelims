@@ -8,8 +8,6 @@ module flux_functions
 
   public :: get_mass_matrix_inv
   public :: add_lift_primal_domain
-  public :: add_lift_second_domain
-  public :: add_jump_second_face
   public :: add_flux_primal_face
   public :: add_boundary_flux
   public :: compute_local_lift
@@ -116,68 +114,12 @@ contains
       call get_basis(bx,by,grid,cell)
       cell_area = half*grid%geoel(5,cell)
       do i=1,grid%nnode
-        ip = grid%inpoel(i,cell)
-        ip = get_global_dof(ip,cell,grid)
+        ip = get_global_dof(grid%inpoel(i,cell),cell,grid)
         residual(ip) = residual(ip) - (bx(i) + by(i))*lift(k)*cell_area
       end do
     end do
 
   end subroutine add_lift_primal_domain
-
-!===================== ADD_LIFT_SECOND_DOMAIN ===============================80
-! Add local lift to lift equation domain integral
-!============================================================================80
-  subroutine add_lift_second_domain(icell,jcell,iface,grid,lhspo)
-
-    integer,        intent(in) :: icell, jcell, iface
-    type(gridtype), intent(in) :: grid
-
-    real(dp), dimension(:,:), intent(inout) :: lhspo
-
-    integer :: ilift
-
-    real(dp) :: icell_area, jcell_area
-
-  continue
-
-    ilift = global_lift_coord(iface,grid)
-    icell_area = half*grid%geoel(5,icell)
-    jcell_area = half*grid%geoel(5,jcell)
-    lhspo(ilift,ilift) = lhspo(ilift,ilift) + two*(icell_area+jcell_area)
-
-  end subroutine add_lift_second_domain
-
-!===================== ADD_LIFT_SECOND_DOMAIN ===============================80
-! Add jump condition to lift equation
-!============================================================================80
-  subroutine add_jump_second_face(icell,jcell,iface,grid,lhspo)
-
-    integer,        intent(in) :: icell, jcell, iface
-    type(gridtype), intent(in) :: grid
-
-    real(dp), dimension(:,:), intent(inout) :: lhspo
-
-    integer :: ilift, ip, jp, i
-
-    real(dp) :: nx, ny, face_area, integrated_const
-    real(dp) :: eta = 4._dp
-
-  continue
-
-    ilift = global_lift_coord(iface,grid)
-    call get_face_normal(nx,ny,face_area,grid,iface)
-
-    ! result of integral of jump function at iface
-    integrated_const = my_4th*eta*(nx+ny)*face_area
-
-    do i=1,grid%nnode
-      ip = grid%inpoel(i,icell)
-      jp = grid%inpoel(i,jcell)
-      lhspo(ilift,jp) = lhspo(ilift,jp) + integrated_const
-      lhspo(ilift,ip) = lhspo(ilift,ip) - integrated_const
-    end do
-
-  end subroutine add_jump_second_face
 
 !======================= ADD_FLUX_PRIMAL_FACE ===============================80
 ! Add flux to primal equation at iface
@@ -218,21 +160,23 @@ contains
 
       ! integrated coefficients of phi
       do i = 1,grid%nnode
-        ip = grid%inpoel(i,icell)
-        phi_local = phi(get_global_dof(ip,icell,grid))
+        ip = grid%inpoel(i,cell)
+        phi_local = phi(get_global_dof(ip,cell,grid))
         flux = flux + phi_local*grad(i)*half*face_area
       end do
 
     end do left_right_average
 
-    flux = flux - lift(k)*half*face_area*(nx+ny)
+    flux = flux - lift(k)*half*(nx+ny)*face_area
+    !write(*,*) "CHECK: face:",iface, icell,jcell
+    !write(*,*) "CHECK: flux = ",flux
 
     loop_face_nodes: do i = 3,4
       inode = grid%intfac(i,iface)
       idof = get_global_dof(inode,icell,grid)
       jdof = get_global_dof(inode,jcell,grid)
-      residual(idof) = residual(idof) + flux  
-      residual(jdof) = residual(jdof) - flux  !jcell has negative normal
+      residual(idof) = residual(idof) - flux  
+      residual(jdof) = residual(jdof) + flux  !jcell has negative normal
     end do loop_face_nodes
 
   end subroutine add_flux_primal_face
@@ -246,7 +190,7 @@ contains
     real(dp),               intent(in)    :: uinf,vinf
     real(dp), dimension(:), intent(inout) :: residual
 
-    real(dp) :: cface, nx, ny, face_area
+    real(dp) :: flux, nx, ny, face_area
     integer :: iface, ip1, ip2, icell
 
   continue
@@ -260,23 +204,17 @@ contains
         ip2 = get_global_dof(grid%intfac(4,iface),icell,grid)
 
         call get_face_normal(nx,ny,face_area,grid,iface)
-        cface = 0.5_dp*(uinf*nx + vinf*ny)*face_area
+        flux = 0.5_dp*(uinf*nx + vinf*ny)*face_area
+        !write(*,*) "CHECK: face: ",iface, icell
+        !write(*,*) "CHECK: bc flux = ",flux
     
-        residual(ip1) = residual(ip1) - cface
-        residual(ip2) = residual(ip2) - cface
+        residual(ip1) = residual(ip1) - flux
+        residual(ip2) = residual(ip2) - flux
     
       end if
     end do
 
   end subroutine add_boundary_flux
-
-  function global_lift_coord(iface,grid) result(ilift)
-    integer,        intent(in)  :: iface
-    type(gridtype), intent(in)  :: grid
-    integer :: ilift
-  continue
-    ilift = grid%npoin + iface - grid%nface
-  end function global_lift_coord
 
   subroutine get_basis(bx,by,grid,icell)
     integer,                intent(in)  :: icell
@@ -284,9 +222,9 @@ contains
     real(dp), dimension(3), intent(out) :: bx, by
   continue
     bx(1:2) = grid%geoel(1:2,icell)
-    bx(3)   = -(bx(1) - bx(2))
+    bx(3)   = -(bx(1) + bx(2))
     by(1:2) = grid%geoel(3:4,icell)
-    by(3)   = -(by(1) - by(2))
+    by(3)   = -(by(1) + by(2))
   end subroutine get_basis
 
   subroutine get_face_normal(nx,ny,face_area,grid,iface)

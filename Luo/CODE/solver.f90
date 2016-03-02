@@ -35,31 +35,39 @@ contains
     integer,                   intent(in)    :: ndof
     real(dp),                  intent(in)    :: uinf,vinf
     real(dp), dimension(ndof) :: phi
-    real(dp), dimension(3)    :: bx, by
-    integer :: ielem, ip, i
+    real(dp), dimension(3)    :: bx, by, phi_local
+    real(dp) :: denom
+    integer :: ielem, ip1, ip2, ip3
   continue
     phi = zero
     do ielem= 1, grid%nelem
       call get_basis(bx,by,grid,ielem)
-      do i = 1, grid%nnode
-        if (bx(i) /= zero .and. by(i) /= zero) then
-          ip = get_global_dof(grid%inpoel(i,ielem),ielem,grid)
-          phi(ip) = uinf/bx(i) + vinf/by(i)
-          exit
-        end if
-      end do
+      ip1 = get_global_dof(grid%inpoel(1,ielem),ielem,grid)
+      ip2 = get_global_dof(grid%inpoel(2,ielem),ielem,grid)
+      ip3 = get_global_dof(grid%inpoel(3,ielem),ielem,grid)
+
+      ! Formulation so that gradient of phi is (uinf,vinf)
+      denom = (by(1)*bx(2)-bx(1)*by(2))
+      phi(ip1) = -(bx(2)*(by(3)-vinf)+by(2)*uinf-by(2)*bx(3)) / denom
+      phi(ip2) = (bx(1)*(by(3)-vinf)+by(1)*uinf-by(1)*bx(3)) / denom
+      phi(ip3) = one
+      phi_local(1) = phi(ip1)
+      phi_local(2) = phi(ip2)
+      phi_local(3) = phi(ip3)
+
     end do
   end function init_freestream
 
 !============================ ITERATE =======================================80
 ! Iterate to explicitly advance the solution in pseudo-time
 !============================================================================80
-  subroutine iterate(phi,grid,ndof)
+  subroutine iterate(phi,grid,ndof,tolerance)
 
     use namelist_data, only : uinf, vinf, nsteps, dt
 
     type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
+    real(dp),                  intent(in)    :: tolerance
     real(dp), dimension(ndof), intent(inout) :: phi
     real(dp), dimension(ndof)  :: residual
 
@@ -69,17 +77,24 @@ contains
 
   continue
 
+    write(*,*) "Iteration  L2_error"
     do timestep = 1, nsteps
       residual = get_residual(phi,grid,ndof,uinf,vinf)
       L2_error = compute_L2(residual,ndof)
-      if (timestep == 1) res0 = L2_error
+      if (timestep == 1) res0 = L2_error + tiny(one)
       rel_res = L2_error/res0
       do i = 1, ndof
         phi(i) = phi(i) - dt*residual(i)
       end do
-      write(*,*) "CHECK: iter error = ",timestep,rel_res
+      write(*,11) timestep,rel_res
+      if (rel_res < tolerance) then
+        write(*,10) "Solution converged to tolerance:",tolerance,   &
+                    "at iteration:",timestep
+        exit
+      end if
     end do
-
+10 format(A,x,g10.3,x,A,x,i5)
+11 format(i10,x,e11.4)
   end subroutine
 
 !============================ GET_RESIDUAL ==================================80
@@ -98,6 +113,7 @@ contains
     residual = zero    
 
     call compute_local_lift(phi,lift,grid,ndof)
+    lift = zero
 
     call compute_domain_integral(residual,phi,grid,ndof)
     call add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)
@@ -155,6 +171,8 @@ contains
 !============================================================================80
   subroutine compute_domain_integral(residual,phi,grid,ndof)
 
+    use flux_functions, only : get_basis
+
     integer,                   intent(in)    :: ndof
     type(gridtype),            intent(in)    :: grid
     real(dp), dimension(ndof), intent(in)    :: phi
@@ -170,13 +188,7 @@ contains
 
     do ielem = 1, grid%nelem
 
-      bx(1) = grid%geoel(1,ielem)
-      bx(2) = grid%geoel(2,ielem)
-      bx(3) = -(bx(1)+bx(2))
-      by(1) = grid%geoel(3,ielem)
-      by(2) = grid%geoel(4,ielem)
-      by(3) = -(by(1)+by(2))
-
+      call get_basis(bx,by,grid,ielem)
       D = grid%geoel(5,ielem)
       area = half*D
 
@@ -201,8 +213,6 @@ contains
   subroutine add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)
 
     use flux_functions, only : add_lift_primal_domain,  &
-                               add_lift_second_domain,  & 
-                               add_jump_second_face,    &
                                add_flux_primal_face,    &
                                add_boundary_flux
 
@@ -247,12 +257,14 @@ contains
 
   subroutine get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
 
+    use flux_functions, only : get_basis
+
     type(gridtype), intent(in) :: grid
 
     real(dp), dimension(:),   intent(in)  :: phi
     real(dp), dimension(:),   intent(out) :: Vx, Vy, Vt, nodal_phi
 
-    real(dp), dimension(3)          :: phi_local
+    real(dp), dimension(3)          :: phi_local, bx, by
     real(dp), dimension(grid%npoin) :: Vxarea, Vyarea, phiarea,area
 
     integer :: ielem, ipoin, ip1, ip2, ip3, dof1, dof2, dof3
@@ -272,6 +284,8 @@ contains
 
     do ielem=1,grid%nelem
 
+      call get_basis(bx,by,grid,ielem)
+
       dof1=get_global_dof(grid%inpoel(1,ielem),ielem,grid)
       dof2=get_global_dof(grid%inpoel(2,ielem),ielem,grid)
       dof3=get_global_dof(grid%inpoel(3,ielem),ielem,grid)
@@ -286,13 +300,8 @@ contains
       phi_local(2) = phi(dof2)*local_area
       phi_local(3) = phi(dof3)*local_area
 
-      Vx_local = (grid%geoel(1,ielem)*(phi(dof1)-phi(dof3))       &
-                + grid%geoel(2,ielem)*(phi(dof2)-phi(dof3)))      &
-                * local_area
-
-      Vy_local = (grid%geoel(3,ielem)*(phi(dof1)-phi(dof3))       &
-                + grid%geoel(4,ielem)*(phi(dof2)-phi(dof3)))      &
-                * local_area
+      Vx_local = sum(phi_local(1:3)*bx(1:3))
+      Vy_local = sum(phi_local(1:3)*by(1:3))
 
       phiarea(ip1) = phiarea(ip1)+phi_local(1)
       phiarea(ip2) = phiarea(ip2)+phi_local(2)

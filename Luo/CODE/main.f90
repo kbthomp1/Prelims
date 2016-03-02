@@ -4,7 +4,7 @@ program main
   use gridtools,     only : gridtype, preprocess_grid
   use solver,        only : iterate, get_soln, init_freestream
   use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist
-  use namelist_data, only : gridfile, nnode, tec_dataname, uinf, vinf
+  use namelist_data, only : gridfile, nnode, tec_dataname, uinf, vinf, tolerance
 
   implicit none
   
@@ -33,9 +33,10 @@ continue
   allocate(Vy(grid%npoin))
   allocate(Vt(grid%npoin))
 
-  phi = init_freestream(ndof,grid,uinf,vinf)
+  !phi = init_freestream(ndof,grid,uinf,vinf)
+  phi = 0._dp
 
-  call iterate(phi,grid,ndof)
+  call iterate(phi,grid,ndof,tolerance)
 
   call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
   

@@ -1,0 +1,32 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 13.04.0 ] */
+
+/* [wxMaxima: input   start ] */
+eqns : [u1*Bx1 + u2*(Bx2+Bx3) = uinf, u1*By1 + u2*(By2+By3) = vinf];
+
+solve(eqns,[u1,u2]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+eqns2: [u1*bx(1) + u2*(1-bx(1)) = uinf, u1*by(1) + u2*(1-by(1)) = vinf];
+
+solve(eqns2, [u1,u2]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+eqns3: [u1*(1-bx(2)) + u2*bx(2) = uinf, u1*(1-by(2)) + u2*by(2) = vinf];
+solve(eqns3, [u1,u2]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+eqns4: [u1*bx(1) - u2*bx(1) = uinf, u1*by(1) - u2*by(1) = vinf];
+solve(eqns4,[u1,u2]);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+eqns5: [-u1*bx(2) + u2*bx(2) = uinf, -u1*by(2) - u2*by(2) = vinf];
+solve(eqns5,[u1,u2]);
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

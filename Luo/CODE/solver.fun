@@ -12,18 +12,34 @@ setup
   end if
 end setup
 
-test domain_integral
+test residual
   use test_helper
-  real(dp), dimension(ndof) :: phi
-  real(dp), dimension(ndof) :: residual
-  integer :: i
+  real(dp), dimension(ndof)        :: phi, res
+  real(dp), dimension(grid%numfac) :: lift
+  real(dp) :: uinf, vinf
+continue
+  res = zero
+  uinf = one; vinf = zero
+  phi = init_freestream(ndof,grid,uinf,vinf)
+  res = get_residual(phi,grid,ndof,uinf,vinf)
+  call wrt(res,"residual")
+end test
+
+test flux_integration
+  use test_helper
+  use flux_functions, only : compute_local_lift
+  real(dp), dimension(ndof)        :: phi, residual
+  real(dp), dimension(grid%numfac) :: lift
+  real(dp) :: uinf, vinf
 continue
   residual = zero
-  do i = 1, ndof
-    phi(i) = real(i,dp)
-  end do
+  lift = zero
+  uinf = one; vinf = zero
+  phi = init_freestream(ndof,grid,uinf,vinf)
+  call compute_local_lift(phi,lift,grid,ndof)
   call compute_domain_integral(residual,phi,grid,ndof)
-  call wrt(residual,"residual")
+  call add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)
+  !call wrt(residual,"residual")
 end test
 
 test mass_matrix_inversion
@@ -32,7 +48,7 @@ test mass_matrix_inversion
 continue
   residual = one
   call invert_mass_matrix(residual,grid,ndof)
-  call wrt(residual,"residual")
+  !call wrt(residual,"residual")
 end test
 
 !test check_residual

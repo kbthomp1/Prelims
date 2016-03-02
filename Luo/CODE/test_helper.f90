@@ -8,7 +8,8 @@ module test_helper
 
   type(gridtype) :: grid
 
-  character(len=20) :: gridfile = "testgrid"
+  !character(len=20) :: gridfile = "testgrid"
+  character(len=20) :: gridfile = "8cells"
 
   real(dp), parameter :: zero = 0.0_dp
   real(dp), parameter :: half = 0.5_dp
