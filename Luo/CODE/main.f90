@@ -4,7 +4,7 @@ program main
   use gridtools,     only : gridtype, preprocess_grid
   use solver,        only : iterate, get_soln, init_freestream
   use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist
-  use namelist_data, only : gridfile, nnode, tec_dataname
+  use namelist_data, only : gridfile, nnode, tec_dataname, uinf, vinf
 
   implicit none
   
@@ -33,7 +33,7 @@ continue
   allocate(Vy(grid%npoin))
   allocate(Vt(grid%npoin))
 
-  phi = init_freestream(ndof)
+  phi = init_freestream(ndof,grid,uinf,vinf)
 
   call iterate(phi,grid,ndof)
 

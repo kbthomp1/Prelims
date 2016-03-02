@@ -29,13 +29,25 @@ contains
 !======================= INIT_FREESTREAM ====================================80
 ! Initialize phi to freestream
 !============================================================================80
-  function init_freestream(ndof) result(phi)
+  function init_freestream(ndof,grid,uinf,vinf) result(phi)
+    use flux_functions, only : get_global_dof, get_basis
+    type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
+    real(dp),                  intent(in)    :: uinf,vinf
     real(dp), dimension(ndof) :: phi
-    integer :: i
+    real(dp), dimension(3)    :: bx, by
+    integer :: ielem, ip, i
   continue
-    do i = 1, ndof
-      phi(i) = one
+    phi = zero
+    do ielem= 1, grid%nelem
+      call get_basis(bx,by,grid,ielem)
+      do i = 1, grid%nnode
+        if (bx(i) /= zero .and. by(i) /= zero) then
+          ip = get_global_dof(grid%inpoel(i,ielem),ielem,grid)
+          phi(ip) = uinf/bx(i) + vinf/by(i)
+          exit
+        end if
+      end do
     end do
   end function init_freestream
 
@@ -51,7 +63,7 @@ contains
     real(dp), dimension(ndof), intent(inout) :: phi
     real(dp), dimension(ndof)  :: residual
 
-    real(dp) :: L2_error
+    real(dp) :: L2_error, rel_res, res0
 
     integer :: timestep, i
 
@@ -60,11 +72,12 @@ contains
     do timestep = 1, nsteps
       residual = get_residual(phi,grid,ndof,uinf,vinf)
       L2_error = compute_L2(residual,ndof)
+      if (timestep == 1) res0 = L2_error
+      rel_res = L2_error/res0
       do i = 1, ndof
         phi(i) = phi(i) - dt*residual(i)
       end do
-
-      write(*,*) "CHECK: iter error = ",timestep,L2_error
+      write(*,*) "CHECK: iter error = ",timestep,rel_res
     end do
 
   end subroutine
@@ -73,11 +86,13 @@ contains
 ! Form the residual
 !============================================================================80
   function get_residual(phi,grid,ndof,uinf,vinf) result(residual)
+    use flux_functions, only : compute_local_lift
     type(gridtype),            intent(in) :: grid
     integer,                   intent(in) :: ndof
     real(dp),                  intent(in) :: uinf,vinf
     real(dp), dimension(ndof), intent(in) :: phi
-    real(dp), dimension(ndof)  :: residual, lift
+    real(dp), dimension(ndof)         :: residual
+    real(dp), dimension(grid%numfac)  :: lift
   continue
 
     residual = zero    
@@ -85,7 +100,7 @@ contains
     call compute_local_lift(phi,lift,grid,ndof)
 
     call compute_domain_integral(residual,phi,grid,ndof)
-    call add_flux_contributions(residual,phi,grid,ndof,uinf,vinf)
+    call add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)
     call invert_mass_matrix(residual,grid,ndof)
 
   end function get_residual
@@ -180,36 +195,10 @@ contains
 
   end subroutine compute_domain_integral
 
-!===================== COMPUTE_LOCAL_LIFT ===================================80
-! Compute the local lifting function at interior faces
-!============================================================================80
-  subroutine compute_local_lift(phi,lift,grid,ndof)
-
-    integer,        intent(in) :: ndof
-    type(gridtype), intent(in) :: grid
-
-    real(dp), dimension(ndof), intent(in)  :: phi
-    real(dp), dimension(ndof), intent(out) :: lift
-
-    integer :: iface, icell, jcell, i
-  continue
-
-    interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
-
-      i = iface - grid%nface
-      icell = grid%intfac(1,iface)  ! left cell
-      jcell = grid%intfac(2,iface)  ! right cell
-
-      lift(i) = one
-
-    end do interior_faces
-
-  end subroutine compute_local_lift
-
 !===================== ADD_FLUX_CONTRIBUTIONS ===============================80
 ! Add the flux contributions to the residual 
 !============================================================================80
-  subroutine add_flux_contributions(residual,phi,grid,ndof,uinf,vinf)
+  subroutine add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)
 
     use flux_functions, only : add_lift_primal_domain,  &
                                add_lift_second_domain,  & 
@@ -221,7 +210,8 @@ contains
     type(gridtype), intent(in) :: grid
     real(dp),       intent(in) :: uinf,vinf
 
-    real(dp), dimension(ndof), intent(in)    :: phi
+    real(dp), dimension(:),    intent(in)    :: phi
+    real(dp), dimension(:),    intent(in)    :: lift
     real(dp), dimension(ndof), intent(inout) :: residual
 
     integer :: iface, icell, jcell
@@ -233,10 +223,8 @@ contains
       icell = grid%intfac(1,iface)  ! left cell
       jcell = grid%intfac(2,iface)  ! right cell
 
-      !call add_lift_primal_domain(icell,jcell,iface,grid,lhspo)
-      !call add_lift_second_domain(icell,jcell,iface,grid,lhspo)
-      !call add_jump_second_face(icell,jcell,iface,grid,lhspo)
-      call add_flux_primal_face(icell,jcell,iface,grid,phi,residual)
+      call add_lift_primal_domain(icell,jcell,iface,grid,lift,residual)
+      call add_flux_primal_face(icell,jcell,iface,grid,phi,lift,residual)
 
     end do interior_faces
 

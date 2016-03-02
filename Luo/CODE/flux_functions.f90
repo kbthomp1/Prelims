@@ -12,6 +12,9 @@ module flux_functions
   public :: add_jump_second_face
   public :: add_flux_primal_face
   public :: add_boundary_flux
+  public :: compute_local_lift
+  public :: get_global_dof
+  public :: get_basis
 
   real(dp), parameter :: my_4th = 0.25_dp
 
@@ -22,7 +25,55 @@ module flux_functions
 
 contains
 
-!===================== GET_MASS_MATRIX ==================================80
+!===================== COMPUTE_LOCAL_LIFT ===================================80
+! Compute the local lifting function at interior faces
+!============================================================================80
+  subroutine compute_local_lift(phi,lift,grid,ndof)
+
+    integer,        intent(in) :: ndof
+    type(gridtype), intent(in) :: grid
+
+    real(dp), dimension(ndof),        intent(in)  :: phi
+    real(dp), dimension(grid%numfac), intent(out) :: lift
+
+    integer :: iface, icell, jcell, i, fp1, fp2
+
+    real(dp) :: eta, jump, iarea, jarea
+    real(dp) :: nx, ny, face_area
+    real(dp) :: u1_l, u2_l, u1_r, u2_r
+
+  continue
+
+    eta = real(grid%nnode + 1,dp)
+    interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
+
+      i = iface - grid%nface
+      icell = grid%intfac(1,iface)  ! left cell
+      jcell = grid%intfac(2,iface)  ! right cell
+
+      call get_face_normal(nx,ny,face_area,grid,iface)
+
+      iarea = half*grid%geoel(5,icell)
+      jarea = half*grid%geoel(5,jcell)
+
+      fp1 = grid%intfac(3,iface) ! point 1 on face
+      fp2 = grid%intfac(4,iface) ! point 2 on face
+
+      ! Get degrees on freedom on both sides of face
+      u1_l = phi(get_global_dof(fp1,icell,grid))
+      u2_l = phi(get_global_dof(fp2,icell,grid))
+      u1_r = phi(get_global_dof(fp1,jcell,grid))
+      u2_r = phi(get_global_dof(fp2,jcell,grid))
+
+      jump = (u1_r + u2_r - u1_l - u2_l)
+
+      lift(i) = -(eta*my_4th*jump*face_area)/(two*(iarea+jarea))
+
+    end do interior_faces
+
+  end subroutine compute_local_lift
+
+!========================= GET_MASS_MATRIX ==================================80
 ! Get the inverse of the mass matrix, \int(B_i*B_j*dV)
 !============================================================================80
   function get_mass_matrix_inv(D) result(m_inv)
@@ -42,22 +93,23 @@ contains
 !===================== ADD_LIFT_PRIMAL_DOMAIN ===============================80
 ! Add local lift functions to primal domain integral
 !============================================================================80
-  subroutine add_lift_primal_domain(icell,jcell,iface,grid,lhspo)
+  subroutine add_lift_primal_domain(icell,jcell,iface,grid,lift,residual)
 
-    integer,        intent(in) :: icell, jcell, iface
-    type(gridtype), intent(in) :: grid
-    real(dp), dimension(:,:), intent(inout) :: lhspo
+    integer,                intent(in) :: icell, jcell, iface
+    type(gridtype),         intent(in) :: grid
+    real(dp), dimension(:), intent(in)    :: lift
+    real(dp), dimension(:), intent(inout) :: residual
 
     real(dp), dimension(3) :: bx, by
     integer,  dimension(2) :: cells
-    integer  :: ilift, ip, i, cell, l
+    integer  :: ip, i, cell, l, k
     real(dp) :: cell_area
 
   continue
 
-    ilift = global_lift_coord(iface,grid)
     cells(1) = icell
     cells(2) = jcell
+    k = iface - grid%nface
 
     do l = 1,2
       cell = cells(l)
@@ -65,7 +117,8 @@ contains
       cell_area = half*grid%geoel(5,cell)
       do i=1,grid%nnode
         ip = grid%inpoel(i,cell)
-        lhspo(ip,ilift) = lhspo(ip,ilift) - (bx(i) + by(i))*cell_area
+        ip = get_global_dof(ip,cell,grid)
+        residual(ip) = residual(ip) - (bx(i) + by(i))*lift(k)*cell_area
       end do
     end do
 
@@ -129,18 +182,18 @@ contains
 !======================= ADD_FLUX_PRIMAL_FACE ===============================80
 ! Add flux to primal equation at iface
 !============================================================================80
-  subroutine add_flux_primal_face(icell,jcell,iface,grid,phi,residual)
+  subroutine add_flux_primal_face(icell,jcell,iface,grid,phi,lift,residual)
 
     integer,        intent(in) :: icell, jcell, iface
     type(gridtype), intent(in) :: grid
 
-    real(dp), dimension(:), intent(in)    :: phi
+    real(dp), dimension(:), intent(in)    :: phi, lift
     real(dp), dimension(:), intent(inout) :: residual
 
     real(dp), dimension(3) :: bx, by, grad
 
     integer, dimension(2) :: cells
-    integer :: ip, i, l
+    integer :: ip, i, l, k
     integer :: cell, inode, idof, jdof
 
     real(dp) :: nx, ny, face_area, flux, phi_local
@@ -151,6 +204,7 @@ contains
 
     cells(1) = icell
     cells(2) = jcell
+    k = iface - grid%nface
     call get_face_normal(nx,ny,face_area,grid,iface)
 
     left_right_average: do l = 1,2
@@ -171,8 +225,7 @@ contains
 
     end do left_right_average
 
-    ! integrated coefficient of local lift
-    !lift_coef = my_4th*face_area
+    flux = flux - lift(k)*half*face_area*(nx+ny)
 
     loop_face_nodes: do i = 3,4
       inode = grid%intfac(i,iface)
