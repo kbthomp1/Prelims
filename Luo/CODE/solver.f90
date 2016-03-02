@@ -73,29 +73,72 @@ contains
 
     real(dp) :: L2_error, rel_res, res0
 
-    integer :: timestep, i
+    integer :: timestep
 
   continue
 
     write(*,*) "Iteration  L2_error"
     do timestep = 1, nsteps
-      residual = get_residual(phi,grid,ndof,uinf,vinf)
+
+      ! Integrate explicitly in pseudo time to evolve phi
+      call rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf)
+
+      ! Compute the residual L2 error norm for reference
       L2_error = compute_L2(residual,ndof)
       if (timestep == 1) res0 = L2_error + tiny(one)
       rel_res = L2_error/res0
-      do i = 1, ndof
-        phi(i) = phi(i) - dt*residual(i)
-      end do
-      write(*,11) timestep,rel_res
+
+      write(*,11) timestep,rel_res, L2_error
+
       if (rel_res < tolerance) then
         write(*,10) "Solution converged to tolerance:",tolerance,   &
                     "at iteration:",timestep
         exit
       end if
+
     end do
 10 format(A,x,g10.3,x,A,x,i5)
-11 format(i10,x,e11.4)
+11 format(i10,2(x,e11.4))
   end subroutine
+
+!============================ RK_INTEGRATE ==================================80
+! Explicitly integrate in pseudo time via Runge-Kutta
+!============================================================================80
+  subroutine rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf)
+    type(gridtype),            intent(in)    :: grid
+    integer,                   intent(in)    :: ndof
+    real(dp),                  intent(in)    :: dt, uinf, vinf
+    real(dp), dimension(ndof), intent(out)   :: residual
+    real(dp), dimension(ndof), intent(inout) :: phi
+    real(dp), dimension(ndof) :: phi0
+    real(dp), dimension(5,5)  :: rk_coefs
+
+    real(dp) :: coeff, rk_coef
+
+    integer :: istag, nstag, dof
+  continue
+
+    nstag = 5
+    ! Runge-Kutta coefficients
+    data rk_coefs  /1.0    , 0.0    , 0.0   , 0.0  , 0.0,  &
+                    0.5    , 1.0    , 0.0   , 0.0  , 0.0,  &
+                    0.1919 , 0.4390 , 1.0   , 0.0  , 0.0,  &
+                    0.25   , 0.3333 , 0.5   , 1.0  , 0.0,  &
+                    0.25   , 0.1666 , 0.375 , 0.5  , 1.0   /
+
+    ! Save solution
+    phi0 = phi
+    do istag=1,nstag
+      rk_coef = rk_coefs(istag,nstag)
+      !phi(1) = one ! Strongly set phi at point for constant
+      residual = get_residual(phi,grid,ndof,uinf,vinf)
+      do dof=1,ndof
+        coeff = rk_coef*dt
+        phi(dof) = phi0(dof) - coeff*residual(dof)
+      end do
+    end do
+
+  end subroutine rk_integrate
 
 !============================ GET_RESIDUAL ==================================80
 ! Form the residual
@@ -106,14 +149,14 @@ contains
     integer,                   intent(in) :: ndof
     real(dp),                  intent(in) :: uinf,vinf
     real(dp), dimension(ndof), intent(in) :: phi
-    real(dp), dimension(ndof)         :: residual
-    real(dp), dimension(grid%numfac)  :: lift
+    real(dp), dimension(ndof)          :: residual
+    real(dp), dimension(2,grid%numfac) :: lift
   continue
 
     residual = zero    
 
     call compute_local_lift(phi,lift,grid,ndof)
-    lift = zero
+    !lift = zero
 
     call compute_domain_integral(residual,phi,grid,ndof)
     call add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)
@@ -221,7 +264,7 @@ contains
     real(dp),       intent(in) :: uinf,vinf
 
     real(dp), dimension(:),    intent(in)    :: phi
-    real(dp), dimension(:),    intent(in)    :: lift
+    real(dp), dimension(:,:),  intent(in)    :: lift
     real(dp), dimension(ndof), intent(inout) :: residual
 
     integer :: iface, icell, jcell
@@ -286,13 +329,13 @@ contains
 
       call get_basis(bx,by,grid,ielem)
 
-      dof1=get_global_dof(grid%inpoel(1,ielem),ielem,grid)
-      dof2=get_global_dof(grid%inpoel(2,ielem),ielem,grid)
-      dof3=get_global_dof(grid%inpoel(3,ielem),ielem,grid)
-
       ip1=grid%inpoel(1,ielem)
       ip2=grid%inpoel(2,ielem)
       ip3=grid%inpoel(3,ielem)
+
+      dof1=get_global_dof(ip1,ielem,grid)
+      dof2=get_global_dof(ip2,ielem,grid)
+      dof3=get_global_dof(ip3,ielem,grid)
 
       local_area = half*grid%geoel(5,ielem)
 

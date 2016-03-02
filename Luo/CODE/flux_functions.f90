@@ -31,8 +31,8 @@ contains
     integer,        intent(in) :: ndof
     type(gridtype), intent(in) :: grid
 
-    real(dp), dimension(ndof),        intent(in)  :: phi
-    real(dp), dimension(grid%numfac), intent(out) :: lift
+    real(dp), dimension(ndof),          intent(in)  :: phi
+    real(dp), dimension(2,grid%numfac), intent(out) :: lift
 
     integer :: iface, icell, jcell, i, fp1, fp2
 
@@ -42,7 +42,8 @@ contains
 
   continue
 
-    eta = real(grid%nnode + 1,dp)
+    eta = real(grid%nnode ,dp)
+    !eta = 0.001_dp
     interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
 
       i = iface - grid%nface
@@ -65,7 +66,8 @@ contains
 
       jump = (u1_r + u2_r - u1_l - u2_l)
 
-      lift(i) = -(eta*my_4th*jump*face_area)/(two*(iarea+jarea))
+      lift(1,i) = -(eta*my_4th*jump*face_area)/(two*iarea) ! left side of face
+      lift(2,i) = -(eta*my_4th*jump*face_area)/(two*jarea) ! right side of face
 
     end do interior_faces
 
@@ -93,10 +95,10 @@ contains
 !============================================================================80
   subroutine add_lift_primal_domain(icell,jcell,iface,grid,lift,residual)
 
-    integer,                intent(in) :: icell, jcell, iface
-    type(gridtype),         intent(in) :: grid
-    real(dp), dimension(:), intent(in)    :: lift
-    real(dp), dimension(:), intent(inout) :: residual
+    integer,                  intent(in) :: icell, jcell, iface
+    type(gridtype),           intent(in) :: grid
+    real(dp), dimension(:,:), intent(in) :: lift
+    real(dp), dimension(:),   intent(inout) :: residual
 
     real(dp), dimension(3) :: bx, by
     integer,  dimension(2) :: cells
@@ -115,7 +117,7 @@ contains
       cell_area = half*grid%geoel(5,cell)
       do i=1,grid%nnode
         ip = get_global_dof(grid%inpoel(i,cell),cell,grid)
-        residual(ip) = residual(ip) - (bx(i) + by(i))*lift(k)*cell_area
+        residual(ip) = residual(ip) - (bx(i) + by(i))*lift(l,k)*cell_area
       end do
     end do
 
@@ -129,8 +131,9 @@ contains
     integer,        intent(in) :: icell, jcell, iface
     type(gridtype), intent(in) :: grid
 
-    real(dp), dimension(:), intent(in)    :: phi, lift
-    real(dp), dimension(:), intent(inout) :: residual
+    real(dp), dimension(:),   intent(in)    :: phi
+    real(dp), dimension(:,:), intent(in)    :: lift
+    real(dp), dimension(:),   intent(inout) :: residual
 
     real(dp), dimension(3) :: bx, by, grad
 
@@ -138,7 +141,7 @@ contains
     integer :: ip, i, l, k
     integer :: cell, inode, idof, jdof
 
-    real(dp) :: nx, ny, face_area, flux, phi_local
+    real(dp) :: nx, ny, face_area, flux, phi_local, lift_avg
 
   continue
 
@@ -164,10 +167,11 @@ contains
         phi_local = phi(get_global_dof(ip,cell,grid))
         flux = flux + phi_local*grad(i)*half*face_area
       end do
-
+      ! integrated local lifting operator from L/R cell face
+      lift_avg = lift(l,k)*half*(nx+ny)*face_area
+      flux = flux - half*lift_avg
     end do left_right_average
 
-    flux = flux - lift(k)*half*(nx+ny)*face_area
     !write(*,*) "CHECK: face:",iface, icell,jcell
     !write(*,*) "CHECK: flux = ",flux
 
@@ -195,6 +199,7 @@ contains
 
   continue
 
+    ! Specify Neumann BC
     do iface=1,grid%nface
       if(grid%intfac(5,iface) == 4) then
        

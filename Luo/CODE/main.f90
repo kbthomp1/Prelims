@@ -37,10 +37,8 @@ continue
   phi = 0._dp
 
   call iterate(phi,grid,ndof,tolerance)
-
   call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
-  
-  call write_tec_volume(tec_dataname,grid,phi,Vx,Vy,Vt)
+  call write_tec_volume(tec_dataname,grid,nodal_phi,Vx,Vy,Vt)
   call write_tec_surface(grid,Vt)
 
 end program main

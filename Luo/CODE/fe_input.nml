@@ -1,15 +1,15 @@
 &fe_input
   !gridfile = "testgrid"
-  !gridfile = "8cells"
-  gridfile = "channel.grid"
+  gridfile = "8cells"
+  !gridfile = "channel.grid"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
   uinf     = 1.0
   vinf     = 0.0
 
-  dt = 1.E-5
+  dt = 1.E-3
 
-  nsteps    = 3000
-  tolerance = 1.E-12
+  nsteps    = 30000
+  tolerance = 1.E-14
 
   tec_dataname = "output.dat"
   !tec_dataname = "channel.dat"
