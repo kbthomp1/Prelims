@@ -213,7 +213,7 @@ contains
     case("conjugate gradient")
       call conjgrad(lhspo,rhspo,phi,npoin,nsteps)
     case("point jacobi")
-      call jacobi(lhspo,rhspo,phi,npoin,nsteps)
+      call jacobi(lhspo,rhspo,phi,npoin,nsteps,tolerance)
     case("gauss seidel")
       call gauss_seidel(lhspo,rhspo,phi,npoin,nsteps,tolerance)
     case default

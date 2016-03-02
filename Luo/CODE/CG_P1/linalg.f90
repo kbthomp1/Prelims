@@ -74,49 +74,58 @@ contains
 ! Solve the linear system via the point jacobi method
 !============================================================================80
   
-  subroutine jacobi(A,b,x,npoin,nsteps)
+  subroutine jacobi(A,b,x,ndof,nsteps,tolerance)
+
+    integer, intent(in) :: ndof, nsteps
+
+    real(dp), intent(in) :: tolerance
+
+    real(dp), dimension(ndof), intent(in)  :: b
+    real(dp), dimension(ndof), intent(out) :: x
+
+    real(dp), dimension(ndof,ndof), intent(in) :: A
   
-    real(dp)                   :: A(npoin,npoin),resnorm,dx,ad
-    real(dp), dimension(npoin) :: b,x,ax,r
-    
-    integer                   :: npoin,nsteps,n,i,j
+    real(dp), dimension(ndof) :: xnew, ax
+
+    real(dp) :: resnorm, r
+
+    integer :: n,i,j
+
+    real(dp), parameter :: zero = 0._dp
   
   continue
   
-    x(1:npoin) = 0.0
-    
+    x = zero
+    write(*,"(A,4x,A)") " Iteration","L2_norm"
     do n=1,nsteps
     
-      resnorm     = 0.0
-      dx          = 0.0
-      ax(1:npoin) = 0.0
-    
-      do i=1,npoin
-     
-        do j=1,npoin   
-          ax(i)=ax(i)+A(i,j)*x(j)
+      resnorm = zero
+      ax      = zero
+
+      do j=1,ndof
+        do i=1,ndof   
+          ax(i) = ax(i) + A(i,j)*x(j)
         end do
-      
-        r(i)    = b(i)-ax(i)
-        resnorm = resnorm + r(i)*r(i)
-    
-        ad = 1/A(i,i)
-    
-        dx = r(i)*ad
-    
-        x(i)=x(i)+dx
-      
       end do
+      
+      do i = 1,ndof
+        r = b(i) - ax(i)
+        resnorm = resnorm + r**2
+        r = r+A(i,i)*x(i)
+        xnew(i) = r/A(i,i)
+      end do
+
+      x = xnew
         
-      if(sqrt(resnorm)<1.0e-05) then
+      write(*,"(i6,6x,e12.5)") n, sqrt(resnorm)
+    
+      if(sqrt(resnorm)<tolerance) then
         write(*,*) "Solution has converged at,",n,"iterations"
-        exit
+        return
       end if
     
-      write(*,*)  n,sqrt(resnorm)
-    
     end do
-  
+
   end subroutine
   
 !============================== GAUSS_SEIDEL ================================80

@@ -1,13 +1,14 @@
 &fe_input
   gridfile = "gridfile"
+  !gridfile = "8cells"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
   uinf     = 1.0
   vinf     = 0.0
   
-  nsteps    = 500
-  tolerance = 1.E-01
+  nsteps    = 500000
+  tolerance = 1.E-14
 
-  lin_solver = "gauss seidel"
+  lin_solver = "point jacobi"
 
-  tec_dataname = "channel.dat"
+  tec_dataname = "output.dat"
 /

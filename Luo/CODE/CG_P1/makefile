@@ -4,8 +4,8 @@ FC = gfortran
 
 #Compiler Options
 #FCFLAGS = -O0 -traceback -g -check -warn
-FCFLAGS = -O0 -Wall -g -fbacktrace -fbounds-check
-#FCFLAGS = -O2
+#FCFLAGS = -O0 -Wall -g -fbacktrace -fbounds-check
+FCFLAGS = -O2
 
 PROGRAMS = main
 
