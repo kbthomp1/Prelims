@@ -63,13 +63,13 @@ contains
 !============================================================================80
   subroutine iterate(phi,grid,ndof,tolerance)
 
-    use namelist_data, only : uinf, vinf, nsteps, dt
+    use namelist_data, only : uinf, vinf, nsteps, cfl, rk_order
 
     type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
     real(dp),                  intent(in)    :: tolerance
     real(dp), dimension(ndof), intent(inout) :: phi
-    real(dp), dimension(ndof)  :: residual
+    real(dp), dimension(ndof)  :: residual, dt
 
     real(dp) :: L2_error, rel_res, res0
 
@@ -77,11 +77,13 @@ contains
 
   continue
 
+    dt = compute_dt(grid,cfl,ndof)
+
     write(*,*) "Iteration  L2_error"
     do timestep = 1, nsteps
 
       ! Integrate explicitly in pseudo time to evolve phi
-      call rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf)
+      call rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf,rk_order)
 
       ! Compute the residual L2 error norm for reference
       L2_error = compute_L2(residual,ndof)
@@ -104,10 +106,11 @@ contains
 !============================ RK_INTEGRATE ==================================80
 ! Explicitly integrate in pseudo time via Runge-Kutta
 !============================================================================80
-  subroutine rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf)
+  subroutine rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf,nstag)
     type(gridtype),            intent(in)    :: grid
-    integer,                   intent(in)    :: ndof
-    real(dp),                  intent(in)    :: dt, uinf, vinf
+    integer,                   intent(in)    :: ndof, nstag
+    real(dp),                  intent(in)    :: uinf, vinf
+    real(dp), dimension(ndof), intent(in)    :: dt
     real(dp), dimension(ndof), intent(out)   :: residual
     real(dp), dimension(ndof), intent(inout) :: phi
     real(dp), dimension(ndof) :: phi0
@@ -115,10 +118,9 @@ contains
 
     real(dp) :: coeff, rk_coef
 
-    integer :: istag, nstag, dof
+    integer :: istag, dof
   continue
 
-    nstag = 5
     ! Runge-Kutta coefficients
     data rk_coefs  /1.0    , 0.0    , 0.0   , 0.0  , 0.0,  &
                     0.5    , 1.0    , 0.0   , 0.0  , 0.0,  &
@@ -133,7 +135,7 @@ contains
       !phi(1) = one ! Strongly set phi at point for constant
       residual = get_residual(phi,grid,ndof,uinf,vinf)
       do dof=1,ndof
-        coeff = rk_coef*dt
+        coeff = rk_coef*dt(dof)
         phi(dof) = phi0(dof) - coeff*residual(dof)
       end do
     end do
@@ -425,5 +427,24 @@ contains
     end do
     L2 = sqrt(L2)
   end function compute_L2
+
+!============================ COMPUTE_DT ====================================80
+! Compute the timestep based on mesh spacing and CFL
+!============================================================================80
+  function compute_dt(grid,cfl,ndof) result(dt)
+    real(dp),       intent(in) :: cfl
+    integer,        intent(in) :: ndof
+    type(gridtype), intent(in) :: grid
+    real(dp), dimension(ndof)  :: dt
+    integer  :: ielem, idx
+    real(dp) :: area, dt_local
+  continue
+    do ielem = 1, grid%nelem
+      area = half*grid%geoel(5,ielem)
+      idx = (ielem-1)*3+1
+      dt_local = area*cfl
+      dt(idx:idx+2) = dt_local
+    end do
+  end function compute_dt
 
 end module solver

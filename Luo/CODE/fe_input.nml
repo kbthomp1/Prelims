@@ -1,15 +1,19 @@
 &fe_input
   !gridfile = "testgrid"
-  !gridfile = "8cells"
-  gridfile = "channel.grid"
+  gridfile = "8cells"
+  !gridfile = "channel.grid"
   nnode    = 3  !number of vertices per element (triangles, quads, etc.)
   uinf     = 1.0
   vinf     = 0.0
 
-  dt = 5.e-6
+  !dt = 5.e-6
+  !cfl = 8.e-2
+  cfl = 0.08
 
-  nsteps    = 30000
-  tolerance = 1.E-14
+  rk_order = 2
+
+  nsteps    = 20000
+  tolerance = 1.E-12
 
   tec_dataname = "output.dat"
   !tec_dataname = "channel.dat"
@@ -17,6 +21,7 @@
   !read_restart = .true.
   !restart_file = "restart.dat"
 
-  read_restart = .true.
-  restart_file = "converged_channel.dat"
+  !read_restart = .true.
+  !restart_file = "converged_channel.dat"
 /
+

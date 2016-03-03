@@ -21,10 +21,11 @@ contains
 
     use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps, &
                               tec_dataname, lin_solver, tolerance, dt,         &
-                              read_restart, restart_file
+                              read_restart, restart_file, rk_order, cfl
 
     namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
-                        lin_solver, tolerance, dt, read_restart, restart_file
+                        lin_solver, tolerance, dt, read_restart, restart_file, &
+                        cfl, rk_order
 
   continue
 
@@ -60,6 +61,12 @@ contains
 
     !Restart file in tecplot point format
     restart_file = "output.dat"
+
+    !Order for runge-kutta time integration
+    rk_order = 2
+
+    !CFL number for determining timestep
+    cfl = 1.0_dp
 
     open(11,file="fe_input.nml",status="old")
     read(11,nml=fe_input)
