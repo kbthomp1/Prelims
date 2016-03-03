@@ -156,7 +156,7 @@ contains
     residual = zero    
 
     call compute_local_lift(phi,lift,grid,ndof)
-    !lift = zero
+    lift = zero
 
     call compute_domain_integral(residual,phi,grid,ndof)
     call add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)

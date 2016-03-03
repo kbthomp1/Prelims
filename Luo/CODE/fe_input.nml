@@ -6,11 +6,16 @@
   uinf     = 1.0
   vinf     = 0.0
 
-  dt = 1.E-3
+  dt = 1.E-2
 
-  nsteps    = 30000
+  nsteps    = 3000
   tolerance = 1.E-14
 
   tec_dataname = "output.dat"
   !tec_dataname = "channel.dat"
+
+  !read_restart = .true.
+  !restart_file = "restart.dat"
+
+  !restart_file = "converged_channel.dat"
 /

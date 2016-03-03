@@ -9,6 +9,7 @@ module io_helpers
   public :: read_namelist
   public :: write_tec_volume
   public :: write_tec_surface
+  public :: read_tec_volume
 
 contains
 
@@ -19,10 +20,11 @@ contains
   subroutine read_namelist
 
     use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps, &
-                              tec_dataname, lin_solver, tolerance, dt
+                              tec_dataname, lin_solver, tolerance, dt,         &
+                              read_restart, restart_file
 
     namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
-                        lin_solver, tolerance, dt
+                        lin_solver, tolerance, dt, read_restart, restart_file
 
   continue
 
@@ -52,6 +54,12 @@ contains
 
     !Tolerance criterion of residual to exit linear solve
     tolerance = 1.E-20_dp
+
+    !Flag to read a restart file
+    read_restart = .false.
+
+    !Restart file in tecplot point format
+    restart_file = "output.dat"
 
     open(11,file="fe_input.nml",status="old")
     read(11,nml=fe_input)
@@ -135,6 +143,56 @@ contains
       end if
     end do
 
+    close(15)
+    close(16)
+
   end subroutine write_tec_surface
+
+!============================ READ_TEC_VOLUME ===============================80
+! read tecplot .dat files with solution in point format for volume
+!============================================================================80
+  subroutine read_tec_volume(tec_dataname,grid,phi,ndof)
+
+    use flux_functions, only : get_global_dof
+
+    type(gridtype),            intent(in)  :: grid
+    integer,                   intent(in)  :: ndof
+    real(dp), dimension(ndof), intent(out) :: phi
+
+    real(dp), dimension(grid%npoin) :: nodal_phi
+
+    character(len=*), intent(in) :: tec_dataname
+
+    real(dp) :: dummy
+
+    integer :: i,j, dof1, dof2, dof3
+    integer :: ip1, ip2, ip3, ielem
+
+  continue
+
+    open(21,file=tec_dataname,status='old')
+    do i = 1,3
+      read(21,*)
+    end do
+    do i=1,grid%npoin
+      read(21,*) dummy,dummy,nodal_phi(i)
+    end do
+    close(21)
+
+    do ielem=1,grid%nelem
+      ip1=grid%inpoel(1,ielem)
+      ip2=grid%inpoel(2,ielem)
+      ip3=grid%inpoel(3,ielem)
+
+      dof1=get_global_dof(ip1,ielem,grid)
+      dof2=get_global_dof(ip2,ielem,grid)
+      dof3=get_global_dof(ip3,ielem,grid)
+
+      phi(dof1) = nodal_phi(ip1)
+      phi(dof2) = nodal_phi(ip2)
+      phi(dof3) = nodal_phi(ip3)
+    end do
+
+  end subroutine read_tec_volume
 
 end module io_helpers

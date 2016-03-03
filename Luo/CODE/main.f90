@@ -3,8 +3,10 @@ program main
   use kinddefs,      only : dp
   use gridtools,     only : gridtype, preprocess_grid
   use solver,        only : iterate, get_soln, init_freestream
-  use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist
-  use namelist_data, only : gridfile, nnode, tec_dataname, uinf, vinf, tolerance
+  use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist,&
+                            read_tec_volume
+  use namelist_data, only : gridfile, nnode, tec_dataname, uinf, vinf,         &
+                            tolerance, read_restart, restart_file
 
   implicit none
   
@@ -33,8 +35,12 @@ continue
   allocate(Vy(grid%npoin))
   allocate(Vt(grid%npoin))
 
-  !phi = init_freestream(ndof,grid,uinf,vinf)
-  phi = 0._dp
+  if (read_restart) then
+    call read_tec_volume(restart_file,grid,phi,ndof)
+  else
+    phi = init_freestream(ndof,grid,uinf,vinf)
+    !phi = 0._dp
+  end if
 
   call iterate(phi,grid,ndof,tolerance)
   call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
