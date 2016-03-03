@@ -914,13 +914,13 @@ $!GLOBALRGB
   RANGEMAX = 1
 $!GLOBALCONTOUR  1
   VAR = 3
-  DEFNUMLEVELS = 6
   LEGEND
     {
     SHOW = YES
     XYPOS
       {
-      X = 95
+      X = 98.16
+      Y = 94.152
       }
     LABELINCREMENT = 3.174E+14
     }
@@ -940,13 +940,22 @@ $!GLOBALCONTOUR  1
 $!CONTOURLEVELS NEW
   CONTOURGROUP = 1
   RAWDATA
-6
+15
+0.86
+0.88
+0.9
+0.92
 0.94
 0.96
 0.98
 1
 1.02
 1.04
+1.06
+1.08
+1.1
+1.12
+1.14
 $!GLOBALCONTOUR  2
   LEGEND
     {
