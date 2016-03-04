@@ -6,16 +6,14 @@
   uinf     = 1.0
   vinf     = 0.0
 
-  !dt = 5.e-6
-  !cfl = 8.e-2
-  cfl = 1.e-4
+  cfl = 1.e-2
 
-  rk_order = 5
+  rk_order = 3
 
-  nsteps    = 0
+  nsteps    = -1
   tolerance = 1.E-12
 
-  !output_freq = 5
+  output_freq = 1
 
   tec_dataname = "output.dat"
   !tec_dataname = "channel.dat"
@@ -23,7 +21,7 @@
   !read_restart = .true.
   !restart_file = "restart.dat"
 
-  read_restart = .true.
-  restart_file = "converged_channel.dat"
+  !read_restart = .true.
+  !restart_file = "converged_channel.dat"
 /
 

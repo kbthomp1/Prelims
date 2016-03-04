@@ -16,6 +16,7 @@ module solver
   public :: compute_domain_integral
   public :: add_flux_contributions
   public :: invert_mass_matrix
+  public :: check_stop
 
   real(dp), parameter :: my_4th = 0.25_dp
 
@@ -85,6 +86,7 @@ contains
     dt = compute_dt(grid,cfl,ndof)
 
     counter = 0
+    if (nsteps < 0) nsteps = huge(1)
 
     write(*,*) "Iteration  L2_error"
     do timestep = 1, nsteps
@@ -100,13 +102,17 @@ contains
       rel_res = L2_error/res0
 
       if (counter == output_freq) then
-        write(time_string,'(i12,"_timestep.dat")') timestep
-        call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
-        call write_tec_volume(trim(adjustl(time_string)),grid,nodal_phi,Vx,Vy,Vt)
+        !write(time_string,'(i12,"_timestep.dat")') timestep
+        !call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
+        !call write_tec_volume(trim(adjustl(time_string)),grid,nodal_phi,Vx,Vy,Vt)
+        write(*,11) timestep,rel_res, L2_error
         counter = 0
       end if
 
-      write(*,11) timestep,rel_res, L2_error
+      if (check_stop()) then
+        write(*,*) "stop.dat found.  Stopping gracefully..."
+        exit
+      end if
 
       if (rel_res < tolerance) then
         write(*,10) "Solution converged to tolerance:",tolerance,   &
@@ -470,5 +476,11 @@ contains
       dt(idx:idx+2) = dt_local
     end do
   end function compute_dt
+
+  function check_stop()
+    logical :: check_stop
+  continue
+    inquire(file="stop.dat",exist=check_stop)
+  end function
 
 end module solver

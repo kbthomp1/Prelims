@@ -12,6 +12,10 @@ setup
   end if
 end setup
 
+test stop_with_file
+  write(*,*) "CHECK: stop.dat found? => ",check_stop()
+end test
+
 test residual
   use test_helper
   real(dp), dimension(ndof)        :: phi, res
