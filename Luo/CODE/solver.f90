@@ -167,6 +167,7 @@ contains
     real(dp), dimension(ndof), intent(in) :: phi
     real(dp), dimension(ndof)          :: residual
     real(dp), dimension(2,grid%numfac) :: lift
+    integer :: i
   continue
 
     residual = zero    
@@ -177,6 +178,16 @@ contains
     call compute_domain_integral(residual,phi,grid,ndof)
     call add_flux_contributions(residual,phi,lift,grid,ndof,uinf,vinf)
     call invert_mass_matrix(residual,grid,ndof)
+
+    call compute_local_lift(phi,lift,grid,ndof)
+
+    !do i = 1, ndof
+    !  write(*,*) "CHECK:  phi = ",phi(i)
+    !end do
+    !do i = 1, grid%numfac
+    !  write(*,*) "CHECK: i lift = ",lift(1,i)
+    !  write(*,*) "CHECK: j lift = ",lift(2,i)
+    !end do
 
   end function get_residual
 
