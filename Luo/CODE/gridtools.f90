@@ -18,14 +18,15 @@ module gridtools
 
   type :: gridtype
 
-    integer :: ndimn  ! Number of spatial dimensions
-    integer :: ntype  ! Type of element selector
-    integer :: nelem  ! Number of elements
-    integer :: npoin  ! Number of points
-    integer :: nface  ! Number of boundary faces
-    integer :: nnode  ! Number of nodes per element
-    integer :: nfael  ! Number of faces per element
-    integer :: numfac ! Number of interior faces
+    integer :: ndimn   ! Number of spatial dimensions
+    integer :: ntype   ! Type of element selector
+    integer :: nelem   ! Number of elements
+    integer :: npoin   ! Number of points
+    integer :: nnode   ! Number of nodes per element
+    integer :: nfael   ! Number of faces per element
+    integer :: numfac  ! Number of interior faces
+    integer :: nbcface ! Number of boundary faces
+    integer :: nface   ! Number of faces total
 
     real(dp), dimension(:,:), allocatable :: coord  ! (x,y) coordinates
     real(dp), dimension(:,:), allocatable :: geoel  ! basis function info
@@ -69,14 +70,14 @@ contains
                   grid%nfael,  grid%nelem, grid%npoin, &
                   grid%esuel)
 
-    call getintfac(grid%esuel, grid%inpoel, grid%nelem, &
-                   grid%nfael, grid%numfac, grid%nface, &
-                   grid%intfac)
+    call getintfac(grid%esuel,  grid%inpoel, grid%nelem, &
+                   grid%nfael,  grid%numfac, grid%nbcface, &
+                   grid%intfac, grid%nface)
 
-    call set_bc(grid%intfac, grid%bcface, grid%nface)
+    call set_bc(grid%intfac, grid%bcface, grid%nbcface)
 
-    call getnormal(grid%intfac, grid%coord, grid%numfac, &
-                   grid%nface,  grid%del)
+    call getnormal(grid%intfac, grid%coord, grid%nface, &
+                   grid%del)
 
     call map_gdof(grid)
 
@@ -107,12 +108,12 @@ contains
     read(12,*) 
     read(12,*) grid%ndimn, grid%ntype
     read(12,*)
-    read(12,*) grid%nelem, grid%npoin, grid%nface
+    read(12,*) grid%nelem, grid%npoin, grid%nbcface
     read(12,*)
     
     allocate(grid%inpoel(3,grid%nelem))
     allocate(grid%coord(grid%ndimn,grid%npoin))
-    allocate(grid%bcface(grid%ndimn+1,grid%nface))
+    allocate(grid%bcface(grid%ndimn+1,grid%nbcface))
     
     do j=1,grid%nelem
       read(12,*) elem_dummy,(grid%inpoel(i,j),i=1,grid%nnode)
@@ -128,7 +129,7 @@ contains
       read(12,*)
     end do
     
-    do j=1,grid%nface
+    do j=1,grid%nbcface
       read(12,*) face_dummy,(grid%bcface(i,j),i=1,grid%ndimn+1)
     end do
  
@@ -218,9 +219,9 @@ contains
 !=========================== SET_BC =========================================80
 ! Set the boundary condition flag in the intfac array
 !============================================================================80
-  subroutine set_bc(intfac, bcface, nface)
+  subroutine set_bc(intfac, bcface, nbcface)
 
-    integer,                 intent(in)    :: nface
+    integer,                 intent(in)    :: nbcface
     integer, dimension(:,:), intent(in)    :: bcface
     integer, dimension(:,:), intent(inout) :: intfac
     
@@ -228,10 +229,10 @@ contains
 
   continue
     
-    loop_bcfaces: do ibc = 1, nface
+    loop_bcfaces: do ibc = 1, nbcface
       bc1 = bcface(1,ibc)
       bc2 = bcface(2,ibc)
-      loop_intfac: do iface = 1, nface
+      loop_intfac: do iface = 1, nbcface
         f1  = intfac(3,iface)
         f2  = intfac(4,iface)
         if ( (bc1 == f1 .and. bc2 == f2) .or. (bc1 == f2 .and. bc2 == f1) ) then
@@ -355,15 +356,16 @@ contains
   
   !=====================================================================
   
-  subroutine getintfac(esuel,inpoel,nelem,nfael,numfac,nface,intfac)
+  subroutine getintfac(esuel,inpoel,nelem,nfael,numfac,nbcface,intfac,  &
+                       nface)
  
-    integer, intent(in)  :: nelem, nfael, nface
-    integer, intent(out) :: numfac
+    integer, intent(in)  :: nelem, nfael, nbcface
+    integer, intent(out) :: numfac, nface
 
     integer, dimension(:,:),              intent(in)  :: esuel,inpoel
     integer, dimension(:,:), allocatable, intent(out) :: intfac
 
-    integer, dimension(4,nface) :: intbcfac
+    integer, dimension(4,nbcface) :: intbcfac
   
     integer :: ielem, jelem, ifael, iface
     integer :: ier, iel, ip1, ip2
@@ -403,10 +405,12 @@ contains
      
       end do
     end do
+
+    nface = nbcface+numfac
     
-    allocate(intfac(5,numfac+nface))
-    intfac(1:4,1:nface)=intbcfac(1:4,1:nface)
-    intfac(5,1:(numfac+nface))=0
+    allocate(intfac(5,nface))
+    intfac(1:4,1:nbcface)=intbcfac(1:4,1:nbcface)
+    intfac(5,1:(nface))=0
     
     do ielem=1,nelem
       do ifael=1,nfael
@@ -433,9 +437,9 @@ contains
        
   !========================================================================
   
-  subroutine getnormal(intfac,coord,numfac,nface,del)
+  subroutine getnormal(intfac,coord,nface,del)
 
-    integer, intent(in) :: numfac, nface
+    integer, intent(in) :: nface
 
     integer, dimension(:,:), intent(in) :: intfac
 
@@ -449,9 +453,9 @@ contains
 
   continue
 
-    allocate(del(3,numfac+nface))
+    allocate(del(3,nface))
   
-    do iface=1,numfac+nface
+    do iface=1,nface
 
       ip1=intfac(3,iface)
       ip2=intfac(4,iface)

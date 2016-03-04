@@ -18,7 +18,6 @@ program main
   
   type(gridtype) :: grid
 
-  integer :: i
 continue
 
   call read_namelist
@@ -39,8 +38,8 @@ continue
   if (read_restart) then
     call read_tec_volume(restart_file,grid,phi,ndof)
   else
-    phi = 0._dp
-    !phi = init_freestream(ndof,grid,uinf,vinf)
+    !phi = 0._dp
+    phi = init_freestream(ndof,grid,uinf,vinf)
     !do i = 1, ndof
     !  phi = real(i,dp)
     !end do

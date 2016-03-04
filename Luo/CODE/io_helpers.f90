@@ -132,7 +132,7 @@ contains
     write(16,*) 'TITLE = "Lower Surface"'
     write(16,*) 'VARIABLES = "X" "Y" "Vt"'
 
-    do i=1,grid%nface
+    do i=1,grid%nbcface
       if(grid%bcface(3,i)==2) then
         ip1=grid%bcface(1,i)
         ip2=grid%bcface(2,i)
@@ -144,7 +144,7 @@ contains
       end if
     end do
     
-    do i=1,grid%nface
+    do i=1,grid%nbcface
       if(grid%bcface(3,i)==2) then
         ip1=grid%bcface(1,i)
         ip2=grid%bcface(2,i)
@@ -176,7 +176,7 @@ contains
 
     real(dp) :: dummy
 
-    integer :: i,j, dof1, dof2, dof3
+    integer :: i, dof1, dof2, dof3
     integer :: ip1, ip2, ip3, ielem
 
   continue

@@ -71,9 +71,9 @@ contains
     integer,                   intent(in)    :: ndof
     real(dp),                  intent(in)    :: tolerance
     real(dp), dimension(ndof), intent(inout) :: phi
-    real(dp), dimension(ndof)       :: residual, dt
-    real(dp), dimension(grid%npoin) :: nodal_phi, Vx, Vy, Vt
-    real(dp), dimension(2,grid%numfac) :: lift
+    real(dp), dimension(ndof)        :: residual, dt
+    real(dp), dimension(grid%npoin)  :: nodal_phi, Vx, Vy, Vt
+    real(dp), dimension(grid%numfac) :: lift
 
     real(dp) :: L2_error, rel_res, res0
     integer  :: timestep, counter, i
@@ -117,10 +117,11 @@ contains
     end do
 
     call compute_local_lift(phi,lift,grid,ndof)
+    L2_error = zero
     do i = 1, grid%numfac
-      write(*,*) "CHECK: i lift = ",lift(1,i)
-      write(*,*) "CHECK: j lift = ",lift(2,i)
+      L2_error = L2_error + lift(i)**2
     end do
+    write(*,*) "CHECK: lift error = ",sqrt(L2_error)
 10 format(A,x,g10.3,x,A,x,i5)
 11 format(i10,2(x,e11.4))
   end subroutine
@@ -139,8 +140,8 @@ contains
     real(dp), dimension(5,5)  :: rk_coefs
 
     real(dp) :: coeff, rk_coef
+    integer  :: istag, dof
 
-    integer :: istag, dof
   continue
 
     ! Runge-Kutta coefficients
@@ -174,8 +175,7 @@ contains
     real(dp),                  intent(in) :: uinf,vinf
     real(dp), dimension(ndof), intent(in) :: phi
     real(dp), dimension(ndof)          :: residual
-    real(dp), dimension(2,grid%numfac) :: lift
-    integer :: i
+    real(dp), dimension(grid%numfac)   :: lift
   continue
 
     residual = zero    
@@ -188,14 +188,6 @@ contains
     call invert_mass_matrix(residual,grid,ndof)
 
     call compute_local_lift(phi,lift,grid,ndof)
-
-    !do i = 1, ndof
-    !  write(*,*) "CHECK:  phi = ",phi(i)
-    !end do
-    !do i = 1, grid%numfac
-    !  write(*,*) "CHECK: i lift = ",lift(1,i)
-    !  write(*,*) "CHECK: j lift = ",lift(2,i)
-    !end do
 
   end function get_residual
 
@@ -298,15 +290,14 @@ contains
     type(gridtype), intent(in) :: grid
     real(dp),       intent(in) :: uinf,vinf
 
-    real(dp), dimension(:),    intent(in)    :: phi
-    real(dp), dimension(:,:),  intent(in)    :: lift
+    real(dp), dimension(:),    intent(in)    :: phi, lift
     real(dp), dimension(ndof), intent(inout) :: residual
 
     integer :: iface, icell, jcell
 
   continue
 
-    interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
+    interior_faces: do iface = grid%nbcface+1, grid%nface
 
       icell = grid%intfac(1,iface)  ! left cell
       jcell = grid%intfac(2,iface)  ! right cell

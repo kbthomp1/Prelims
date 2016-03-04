@@ -14,7 +14,7 @@ module flux_functions
   public :: get_global_dof
   public :: get_basis
 
-  real(dp), parameter :: my_4th = 0.25_dp
+  real(dp), parameter :: my_8th = 0.125_dp
 
   real(dp), parameter :: zero = 0.0_dp
   real(dp), parameter :: half = 0.5_dp
@@ -31,8 +31,8 @@ contains
     integer,        intent(in) :: ndof
     type(gridtype), intent(in) :: grid
 
-    real(dp), dimension(ndof),          intent(in)  :: phi
-    real(dp), dimension(2,grid%numfac), intent(out) :: lift
+    real(dp), dimension(ndof),        intent(in)  :: phi
+    real(dp), dimension(grid%numfac), intent(out) :: lift
 
     integer :: iface, icell, jcell, i, fp1, fp2
 
@@ -45,9 +45,9 @@ contains
     eta = real(grid%nnode+1 ,dp)
     !eta = 40._dp
     !eta = 0.001_dp
-    interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
+    interior_faces: do iface = grid%nbcface+1, grid%nface
 
-      i = iface - grid%nface
+      i = iface - grid%nbcface
       icell = grid%intfac(1,iface)  ! left cell
       jcell = grid%intfac(2,iface)  ! right cell
 
@@ -68,8 +68,7 @@ contains
       jump = (u1_r + u2_r - u1_l - u2_l)*(nx+ny)
       !write(*,*) "CHECK: u",u1_l,u2_l, u1_r, u2_r
 
-      lift(1,i) = -(eta*my_4th*jump)/(two) ! left side of face
-      lift(2,i) = -(eta*my_4th*jump)/(two) ! right side of face
+      lift(i) = -eta*my_8th*jump
 
     end do interior_faces
 
@@ -97,10 +96,10 @@ contains
 !============================================================================80
   subroutine add_lift_primal_domain(icell,jcell,iface,grid,lift,residual)
 
-    integer,                  intent(in) :: icell, jcell, iface
-    type(gridtype),           intent(in) :: grid
-    real(dp), dimension(:,:), intent(in) :: lift
-    real(dp), dimension(:),   intent(inout) :: residual
+    integer,                intent(in) :: icell, jcell, iface
+    type(gridtype),         intent(in) :: grid
+    real(dp), dimension(:), intent(in) :: lift
+    real(dp), dimension(:), intent(inout) :: residual
 
     real(dp), dimension(3) :: bx, by
     integer,  dimension(2) :: cells
@@ -111,7 +110,7 @@ contains
 
     cells(1) = icell
     cells(2) = jcell
-    k = iface - grid%nface
+    k = iface - grid%nbcface
 
     do l = 1,2
       cell = cells(l)
@@ -119,7 +118,7 @@ contains
       face_area = grid%del(3,iface)
       do i=1,grid%nnode
         ip = get_global_dof(grid%inpoel(i,cell),cell,grid)
-        residual(ip) = residual(ip) + (bx(i) + by(i))*lift(l,k)*face_area
+        residual(ip) = residual(ip) + (bx(i) + by(i))*lift(k)*face_area
       end do
     end do
 
@@ -133,9 +132,9 @@ contains
     integer,        intent(in) :: icell, jcell, iface
     type(gridtype), intent(in) :: grid
 
-    real(dp), dimension(:),   intent(in)    :: phi
-    real(dp), dimension(:,:), intent(in)    :: lift
-    real(dp), dimension(:),   intent(inout) :: residual
+    real(dp), dimension(:), intent(in)    :: phi
+    real(dp), dimension(:), intent(in)    :: lift
+    real(dp), dimension(:), intent(inout) :: residual
 
     real(dp), dimension(3) :: bx, by, grad
 
@@ -143,7 +142,7 @@ contains
     integer :: ip, i, l, k
     integer :: cell, inode, idof, jdof
 
-    real(dp) :: nx, ny, face_area, flux, phi_local, lift_avg
+    real(dp) :: nx, ny, face_area, flux, phi_local
 
   continue
 
@@ -151,7 +150,7 @@ contains
 
     cells(1) = icell
     cells(2) = jcell
-    k = iface - grid%nface
+    k = iface - grid%nbcface
     call get_face_normal(nx,ny,face_area,grid,iface)
 
     left_right_average: do l = 1,2
@@ -170,11 +169,10 @@ contains
         flux = flux + phi_local*grad(i)*half*face_area
       end do
 
-      ! integrated local lifting operator from L/R cell face
-      lift_avg = lift(l,k)*half*(nx+ny)*face_area
-      flux = flux - half*lift_avg
-
     end do left_right_average
+
+    ! integrated local lifting operator from cell face
+    flux = flux - lift(k)*half*(nx+ny)*face_area
 
     !write(*,*) "CHECK: face:",iface, icell,jcell
     !write(*,*) "CHECK: flux = ",flux
@@ -204,7 +202,7 @@ contains
   continue
 
     ! Specify Neumann BC
-    do iface=1,grid%nface
+    do iface=1,grid%nbcface
       if(grid%intfac(5,iface) == 4) then
        
         ! map the boundary nodes to the solution node ordering
