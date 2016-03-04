@@ -21,11 +21,12 @@ contains
 
     use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps, &
                               tec_dataname, lin_solver, tolerance, dt,         &
-                              read_restart, restart_file, rk_order, cfl
+                              read_restart, restart_file, rk_order, cfl,       &
+                              output_freq
 
     namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
                         lin_solver, tolerance, dt, read_restart, restart_file, &
-                        cfl, rk_order
+                        cfl, rk_order, output_freq
 
   continue
 
@@ -67,6 +68,9 @@ contains
 
     !CFL number for determining timestep
     cfl = 1.0_dp
+
+    !Output tecplot file frequency
+    output_freq = 0
 
     open(11,file="fe_input.nml",status="old")
     read(11,nml=fe_input)

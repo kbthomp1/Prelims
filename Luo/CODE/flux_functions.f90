@@ -42,7 +42,7 @@ contains
 
   continue
 
-    eta = real(grid%nnode ,dp)
+    eta = real(grid%nnode+1 ,dp)
     !eta = 40._dp
     !eta = 0.001_dp
     interior_faces: do iface = grid%nface+1, grid%nface+grid%numfac
@@ -65,10 +65,10 @@ contains
       u1_r = phi(get_global_dof(fp1,jcell,grid))
       u2_r = phi(get_global_dof(fp2,jcell,grid))
 
-      jump = (u1_r + u2_r - u1_l - u2_l)*(nx+ny)
+      jump = (u1_r + u2_r - u1_l - u2_l)*(nx+ny)*face_area
 
-      lift(1,i) = -(eta*my_4th*jump)/(two) ! left side of face
-      lift(2,i) = -(eta*my_4th*jump)/(two) ! right side of face
+      lift(1,i) = -(eta*my_4th*jump)/(two*iarea) ! left side of face
+      lift(2,i) = -(eta*my_4th*jump)/(two*jarea) ! right side of face
 
     end do interior_faces
 
@@ -104,7 +104,7 @@ contains
     real(dp), dimension(3) :: bx, by
     integer,  dimension(2) :: cells
     integer  :: ip, i, cell, l, k
-    real(dp) :: face_area
+    real(dp) :: cell_area
 
   continue
 
@@ -115,10 +115,10 @@ contains
     do l = 1,2
       cell = cells(l)
       call get_basis(bx,by,grid,cell)
-      face_area = grid%del(3,iface)
+      cell_area = half*grid%geoel(5,cell)
       do i=1,grid%nnode
         ip = get_global_dof(grid%inpoel(i,cell),cell,grid)
-        residual(ip) = residual(ip) + (bx(i) + by(i))*lift(l,k)*face_area
+        residual(ip) = residual(ip) + (bx(i) + by(i))*lift(l,k)*cell_area
       end do
     end do
 

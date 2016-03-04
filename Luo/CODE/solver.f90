@@ -63,24 +63,31 @@ contains
 !============================================================================80
   subroutine iterate(phi,grid,ndof,tolerance)
 
-    use namelist_data, only : uinf, vinf, nsteps, cfl, rk_order
+    use namelist_data, only : uinf, vinf, nsteps, cfl, rk_order, output_freq
+    use io_helpers,    only : write_tec_volume
 
     type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
     real(dp),                  intent(in)    :: tolerance
     real(dp), dimension(ndof), intent(inout) :: phi
-    real(dp), dimension(ndof)  :: residual, dt
+    real(dp), dimension(ndof)       :: residual, dt
+    real(dp), dimension(grid%npoin) :: nodal_phi, Vx, Vy, Vt
 
     real(dp) :: L2_error, rel_res, res0
+    integer  :: timestep, counter
 
-    integer :: timestep
+    character(len=100) :: time_string
 
   continue
 
     dt = compute_dt(grid,cfl,ndof)
 
+    counter = 0
+
     write(*,*) "Iteration  L2_error"
     do timestep = 1, nsteps
+
+      counter = counter + 1
 
       ! Integrate explicitly in pseudo time to evolve phi
       call rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf,rk_order)
@@ -89,6 +96,13 @@ contains
       L2_error = compute_L2(residual,ndof)
       if (timestep == 1) res0 = L2_error + tiny(one)
       rel_res = L2_error/res0
+
+      if (counter == output_freq) then
+        write(time_string,'(i12,"_timestep.dat")') timestep
+        call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
+        call write_tec_volume(trim(adjustl(time_string)),grid,nodal_phi,Vx,Vy,Vt)
+        counter = 0
+      end if
 
       write(*,11) timestep,rel_res, L2_error
 

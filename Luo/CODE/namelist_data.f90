@@ -12,7 +12,7 @@ module namelist_data
   public :: uinf, vinf, tolerance
   public :: nsteps, nnode, dt, cfl, rk_order
   public :: gridfile, tec_dataname, lin_solver
-  public :: restart_file, read_restart
+  public :: restart_file, read_restart, output_freq
 
   real(dp) :: uinf
   real(dp) :: vinf
@@ -23,6 +23,7 @@ module namelist_data
   integer :: nsteps
   integer :: nnode
   integer :: rk_order
+  integer :: output_freq
 
   character(len=100) :: gridfile
   character(len=100) :: tec_dataname
