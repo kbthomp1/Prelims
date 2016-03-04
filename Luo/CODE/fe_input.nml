@@ -6,15 +6,16 @@
   uinf     = 1.0
   vinf     = 0.0
 
-  cfl = 1.e-2
+  cfl = 5e-2
 
-  rk_order = 5
+  rk_order = 3
 
   nsteps       = -1 ! setting to < 0 will run until tolerance met
   absolute_tol = 1.E-12
 
   output_freq = 500
-  !read_restart = .true.
+  read_restart = .true.
+  write_restart_freq = 500
 
   tec_dataname = "output.dat"
   !tec_dataname = "channel.dat"
