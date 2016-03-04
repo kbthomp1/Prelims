@@ -42,12 +42,12 @@
 \maketitle
 
 \section{Introduction}
-Discontinous Galerkin (DG) methods have seen significant development in the last
+Discontinuous Galerkin (DG) methods have seen significant development in the last
 three decades.  Incorporating aspects of finite-volume and finite-element
 methods, DG schemes offer a compact way of achieving higher order accuracy by
 solving for polynomial basis coefficients that are defined uniquely on each
 element.  Discontinuities at the element boundaries are reconciled via ``flux
-functions'', which provide the means that information is propogated between
+functions'', which provide the means that information is propagated between
 elements.  This is a significant advantage when solving hyperbolic partial
 differential equations (PDEs) with discontinuities in the solution, since these
 discontinuities can be handled properly by flux functions using an upwind
@@ -56,7 +56,7 @@ elliptic PDEs.  Since there is not an upwinding mechanism for the diffusion
 operator, a central difference seems to be an intuitive choice; however, this
 has been shown to result in an inconsistent scheme. The central difference flux
 does not capture jumps in the solution, only in the solution gradients.  To
-overcome this issue, Bassi and Rebay developed a flux scheme to account for
+overcome this issue, Bassi and Rebay developed a flux scheme\cite{br2} to account for
 jumps in the solution via ``local lifting operators'', which ``lift'' the
 solution to account for $C_0$ continuity.
 
@@ -86,13 +86,13 @@ rewriting \eref{laplace-equation} as a first order system to be solved
   q - \nabla \phi &= 0
   \label{first-order-sys}
 \end{align}
-with $q$ being a vector auxilliary variable with dimensionality of the problem.
+with $q$ being a vector auxiliary variable with dimensionality of the problem.
 We proceed by defining the solution $\phi$ as a polynomial \begin{equation}
   \phi = \sum{\phi_i B_i}
   \label{fem-soln}
 \end{equation}
 where $\phi_i$ are the basis weights for the basis set $B_i$.  The solution can
-now be iterpolated anywhere in the computational domain, and the basis set used
+now be interpolated anywhere in the computational domain, and the basis set used
 here is a linear finite-element basis based on barycentric coordinates
 \begin{equation}
   \begin{gathered}
@@ -145,30 +145,31 @@ Additionally, since $\vbasis$ is an arbitrary basis, the global lifting operator
 can be related to the local lifting operators by summing the local lift
 contributions
 \begin{equation}
-  \glift = \sum_{e=1}^3{\llift^{(e)}}
+  \glift = \sum_{e=1}^{N_{faces}}{\llift^{(e)}}
   \label{local-global-relation}
 \end{equation}
 With this, the primal form is given by
 \begin{equation}
   \dint{(\nabla \phi - \glift)\cdot \nabla B} -
-  \sum_{j=1}^3\sint{\average{(\nabla \phi - \llift)\cdot\unitn}B} = 0
+  \sum_{j=1}^{N_{faces}}\sint{\average{(\nabla \phi - \llift)\cdot\unitn}B} = 0
   \label{primal-form}
 \end{equation}
 where $\average{\cdot}$ is an average operator.
 
 \section{Implementation}
 Since the Laplace equation is a linear problem, it is possible to construct a
-global system an solve for all unknowns simultaneously.  This is reminscient of
+global system an solve for all unknowns simultaneously.  This is reminiscent of
 the continuous Galerkin (CG) method, where a stiffness matrix was formed for the left
 hand side and a load vector for the right hand side.  In the Discontinuous Galerkin
 formulation, however, continuity is not enforced across elements; therefore, the
 number of unknowns going from CG(P1) to DG(P1) increases from the number of
-points in the mesh to the number of elements times each elements' verticies.
+points in the mesh to the number of elements times each elements' vertices.
 Additionally, if the system is to be solved implicitly, each local lifting
 operator $\llift$ must be solved for as well, increasing the total number of
-equations to $3(N_{elem})+N_{faces}$ at a minimum.  This drastically increases
-the problem size and complexity for an implicit solver, since a sparsity pattern
-must be exploited to formulate an efficient linear solver.
+equations to $3(N_{elem})+N_{faces}$ at a minimum for a triangular mesh.  This
+drastically increases the problem size and complexity for an implicit solver,
+since a sparsity pattern must be exploited to formulate an efficient linear
+solver.
 
 An alternative to solving the system implicitly is to explicitly evolve the
 solution in pseudo-time to steady state.  Adding a time derivative to
@@ -176,7 +177,7 @@ solution in pseudo-time to steady state.  Adding a time derivative to
 \begin{equation}
   \dint{\frac{\partial \phi}{\partial t}B} +
   \dint{(\nabla \phi - \glift)\cdot \nabla B} -
-  \sum_{j=1}^3\sint{\average{(\nabla \phi - \llift)\cdot\unitn}B} = 0
+  \sum_{j=1}^{N_{faces}}\sint{\average{(\nabla \phi - \llift)\cdot\unitn}B} = 0
   \label{primal-w-time}
 \end{equation}
 This results in a much simpler problem to solve, and the notation can be
@@ -189,10 +190,10 @@ where $\vr$ is the residual vector and $\mm$ is the block diagonal mass matrix.
 If the boundaries are not time-dependent, then we recover the solution to the
 Laplace equation upon convergence, since $\vr= 0$.  The mass matrix components can be
 easily computed using \erefs{dom-integral-def}{edge-integral-def}, and the
-system can be inverted by hand to signifcantly save computational time. The time
+system can be inverted by hand to significantly save computational time. The time
 integration is done via Runge-Kutta and the time step can be computed locally or
 globally based on a CFL prescribed.  Thus, this explicit DG scheme can be
-evolved from an initial state to the solution of the laplace equation by
+evolved from an initial state to the solution of the Laplace equation by
 iteratively updating each degree of freedom until the residual is less than a
 prescribed tolerance, with the local lift operators $\llift$ simply computed as
 an intermediate variable.
@@ -209,7 +210,7 @@ and no flux is permitted through the channel walls.
   \label{fig:boundary-conditions}
 \end{figure}
 The solution initial state was set as zero throughout the domain and evolved to
-a steady state solution through explicit runge-kutta time integration.  The
+a steady state solution through explicit Runge-Kutta time integration.  The
 time step used in the integration was computed locally, based on element area
 and the prescribed CFL number, and the system was considered converged when the
 absolute magnitude of the L2 norm of the residual was less than $10^{-12}$.
@@ -238,7 +239,7 @@ expected by the venturi effect.
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/surface_velocity}
-  \caption{Channel upper and lower surface selocity}
+  \caption{Channel upper and lower surface velocity}
   \label{fig:surface-velocity}
 \end{figure}
 Figure \ref{fig:surface-velocity} breaks the
@@ -250,7 +251,7 @@ the domain is not perfectly symmetric, and figure \ref{fig:lower-surface} shows
 the point coordinates for highest point on the spherical bump are slightly off
 of the half-plane. This could explain the lack of symmetry in the surface
 velocity.  Another possibility is that the area-weighted averaging done to map
-the solution degrees off freedom to the mesh nodes has introduced error.  A grid
+the solution degrees of freedom to the mesh nodes has introduced error.  A grid
 refinement study and use of another averaging technique would help to better
 determine what is causing the asymmetry.
 \begin{figure}[h]
@@ -269,5 +270,8 @@ continuous.  The results from the channel with a spherical bump verify that the
 method is able to give results consistent with expectations, with the exception
 of the minor asymmetry in the surface velocity, which may require further
 analysis.
+
+\bibliography{mae766-refs}
+\bibliographystyle{plain}
 
 \end{document}
