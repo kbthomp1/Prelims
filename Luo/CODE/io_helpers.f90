@@ -9,7 +9,9 @@ module io_helpers
   public :: read_namelist
   public :: write_tec_volume
   public :: write_tec_surface
+  public :: write_restart
   public :: read_tec_volume
+  public :: read_restart
 
 contains
 
@@ -22,11 +24,14 @@ contains
     use namelist_data, only : uinf, vinf, gridfile, nnode, uinf, vinf, nsteps, &
                               tec_dataname, lin_solver, tolerance, dt,         &
                               read_restart, restart_file, rk_order, cfl,       &
-                              output_freq
+                              output_freq, read_tec_restart, tec_output_freq,  &
+                              write_restart_freq, relative_tol, absolute_tol
 
     namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
                         lin_solver, tolerance, dt, read_restart, restart_file, &
-                        cfl, rk_order, output_freq
+                        cfl, rk_order, output_freq, read_tec_restart,          &
+                        tec_output_freq, write_restart_freq, relative_tol,     &
+                        absolute_tol
 
   continue
 
@@ -57,8 +62,17 @@ contains
     !Tolerance criterion of residual to exit linear solve
     tolerance = 1.E-20_dp
 
+    !Tolerance criterion of relative residual to signal convergence
+    relative_tol = 1.E-20_dp
+
+    !Tolerance criterion of absolute residual to signal convergence
+    absolute_tol = 1.E-20_dp
+
     !Flag to read a restart file
     read_restart = .false.
+
+    !Flag to read a tecplot output file and interpolat to dofs
+    read_tec_restart = .false.
 
     !Restart file in tecplot point format
     restart_file = "output.dat"
@@ -69,8 +83,14 @@ contains
     !CFL number for determining timestep
     cfl = 1.0_dp
 
+    !Frequency the restart file is written out
+    write_restart_freq = 500
+
+    !Output error norm frequency
+    output_freq = 1
+
     !Output tecplot file frequency
-    output_freq = 0
+    tec_output_freq = 0
 
     open(11,file="fe_input.nml",status="old")
     read(11,nml=fe_input)
@@ -205,5 +225,29 @@ contains
     end do
 
   end subroutine read_tec_volume
+
+  subroutine write_restart(phi,ndof)
+    integer,                   intent(in) :: ndof
+    real(dp), dimension(ndof), intent(in) :: phi
+    integer :: i
+  continue
+    open(51,file="flow.restart", status="replace")
+    do i = 1, ndof
+      write(51,*) phi(i)
+    end do
+    close(51)
+  end subroutine write_restart
+
+  subroutine read_restart(phi,ndof)
+    integer,                   intent(in)  :: ndof
+    real(dp), dimension(ndof), intent(out) :: phi
+    integer :: i
+  continue
+    open(52,file="flow.restart", status="old")
+    do i = 1, ndof
+      read(52,*) phi(i)
+    end do
+    close(52)
+  end subroutine read_restart
 
 end module io_helpers

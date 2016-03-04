@@ -62,15 +62,16 @@ contains
 !============================ ITERATE =======================================80
 ! Iterate to explicitly advance the solution in pseudo-time
 !============================================================================80
-  subroutine iterate(phi,grid,ndof,tolerance)
+  subroutine iterate(phi,grid,ndof)
 
-    use namelist_data, only : uinf, vinf, nsteps, cfl, rk_order, output_freq
-    use io_helpers,    only : write_tec_volume
+    use namelist_data, only : uinf, vinf, nsteps, cfl, rk_order, output_freq,  &
+                              tec_output_freq, write_restart_freq,             &
+                              relative_tol, absolute_tol
+    use io_helpers,    only : write_tec_volume, write_restart
     use flux_functions, only : compute_local_lift
 
     type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
-    real(dp),                  intent(in)    :: tolerance
     real(dp), dimension(ndof), intent(inout) :: phi
     real(dp), dimension(ndof)        :: residual, dt
     real(dp), dimension(grid%npoin)  :: nodal_phi, Vx, Vy, Vt
@@ -78,6 +79,7 @@ contains
 
     real(dp) :: L2_error, rel_res, res0
     integer  :: timestep, counter, i
+    integer  :: tec_counter, rest_counter
 
     character(len=100) :: time_string
 
@@ -85,13 +87,19 @@ contains
 
     dt = compute_dt(grid,cfl,ndof)
 
-    counter = 0
+    counter      = 0
+    tec_counter  = 0
+    rest_counter = 0
+
+    ! Hack to let loop run until convergence
     if (nsteps < 0) nsteps = huge(1)
 
-    write(*,*) "Iteration  L2_error"
+    write(*,*) "Iteration  rel_error   abs_error"
     do timestep = 1, nsteps
 
-      counter = counter + 1
+      counter      = counter + 1
+      tec_counter  = tec_counter + 1
+      rest_counter = rest_counter + 1
 
       ! Integrate explicitly in pseudo time to evolve phi
       call rk_integrate(phi,residual,dt,grid,ndof,uinf,vinf,rk_order)
@@ -101,12 +109,27 @@ contains
       if (timestep == 1) res0 = L2_error + tiny(one)
       rel_res = L2_error/res0
 
+      ! Various means of output and checking for user defined stop
       if (counter == output_freq) then
-        !write(time_string,'(i12,"_timestep.dat")') timestep
-        !call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
-        !call write_tec_volume(trim(adjustl(time_string)),grid,nodal_phi,Vx,Vy,Vt)
         write(*,11) timestep,rel_res, L2_error
         counter = 0
+      end if
+
+      if (isnan(L2_error)) then
+        write(*,*) "NaN Detected!!!  Stopping."
+        stop
+      end if
+
+      if (tec_counter == tec_output_freq) then
+        write(time_string,'(i12,"_timestep.dat")') timestep
+        call get_soln(Vx,Vy,Vt,phi,nodal_phi,grid)
+        call write_tec_volume(trim(adjustl(time_string)),grid,nodal_phi,Vx,Vy,Vt)
+        tec_counter = 0
+      end if
+
+      if (rest_counter == write_restart_freq) then
+        call write_restart(phi,ndof)
+        rest_counter = 0
       end if
 
       if (check_stop()) then
@@ -114,8 +137,14 @@ contains
         exit
       end if
 
-      if (rel_res < tolerance) then
-        write(*,10) "Solution converged to tolerance:",tolerance,   &
+      if (rel_res < relative_tol) then
+        write(*,10) "Solution converged to relative tolerance:",relative_tol, &
+                    "at iteration:",timestep
+        exit
+      end if
+
+      if (L2_error < absolute_tol) then
+        write(*,10) "Solution converged to absolute tolerance:",absolute_tol, &
                     "at iteration:",timestep
         exit
       end if
