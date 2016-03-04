@@ -2,7 +2,7 @@
 %     Created: Fri Mar 04 10:00 AM 2016 E
 % Last Change: Fri Mar 04 10:00 AM 2016 E
 %
-\documentclass[a4paper]{report}
+\documentclass[a4paper]{article}
 
 %\usepackage[a4paper, margin=1in]{geometry}
 
@@ -195,13 +195,24 @@ globally based on a CFL prescribed.  Thus, this explicit DG scheme can be
 evolved from an initial state to the solution of the laplace equation by
 iteratively updating each degree of freedom until the residual is less than a
 prescribed tolerance, with the local lift operators $\llift$ simply computed as
-an auxilliary variable.
+an intermediate variable.
 
 \section{Numerical Results}
-The case being solved is a channel with a circular bump.  Figure ??? shows 
-the Neumann boundary conditions prescribed, where flow in and out of the
-channel is the freestream velocity (1,0), and no flux is permitted through the
-channel walls.
+The case being solved is a channel with a circular bump.  Figure
+\ref{fig:boundary-conditions} shows triangulated mesh and the Neumann boundary conditions
+prescribed.  Flow in and out of the channel is the freestream velocity (1,0),
+and no flux is permitted through the channel walls.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth,trim={0 4cm 0 4cm},clip]{figures/boundary_conditions}
+  \caption{Channel Mesh and Boundary Conditions}
+  \label{fig:boundary-conditions}
+\end{figure}
+The solution initial state was set as zero throughout the domain and evolved to
+a steady state solution through explicit runge-kutta time integration.  The
+time step used in the integration was computed locally, based on element area
+and the prescribed CFL number, and the system was considered converged when the
+absolute magnitude of the L2 norm of the residual was less than $10^{-12}$.
 
   %\frac{\phi_{i}^{(n+1)}}{\Delta t}
 
