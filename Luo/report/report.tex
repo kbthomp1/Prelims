@@ -4,7 +4,7 @@
 %
 \documentclass[a4paper]{article}
 
-%\usepackage[a4paper, margin=1in]{geometry}
+\usepackage[a4paper, margin=1.25in]{geometry}
 
 \usepackage{listings}
 \usepackage{mathtools}
@@ -213,6 +213,19 @@ a steady state solution through explicit runge-kutta time integration.  The
 time step used in the integration was computed locally, based on element area
 and the prescribed CFL number, and the system was considered converged when the
 absolute magnitude of the L2 norm of the residual was less than $10^{-12}$.
+\begin{figure}[h]
+  \captionsetup[subfigure]{position=b}
+  \centering
+  \subcaptionbox{Velocity Potential with Streamlines}
+  {\includegraphics[width=0.45\linewidth]{figures/potential_contour}}
+	\label{fig:potential}
+  \subcaptionbox{Total Velocity Contours}
+  {\includegraphics[width=0.45\linewidth]{figures/Vt_contour}}
+	\label{fig:Vt-contour}
+  \caption{Channel Contour Plots}
+\end{figure}
+%Figure \ref{fig:potential} shows the velocity potential $\phi$ contours across
+the computational domain.
 
   %\frac{\phi_{i}^{(n+1)}}{\Delta t}
 
