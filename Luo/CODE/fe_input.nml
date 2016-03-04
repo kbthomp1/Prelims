@@ -14,7 +14,7 @@
   absolute_tol = 1.E-12
 
   output_freq = 500
-  read_restart = .true.
+  !read_restart = .true.
   write_restart_freq = 500
 
   tec_dataname = "output.dat"

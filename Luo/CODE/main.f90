@@ -10,13 +10,10 @@ program main
 
   implicit none
   
-  integer :: ndof
-  
-  real(dp), dimension(:),   allocatable :: Vx, Vy, Vt
-  
-  real(dp), dimension(:),   allocatable :: phi, nodal_phi
-  
+  integer        :: ndof, i
   type(gridtype) :: grid
+  real(dp), dimension(:),   allocatable :: Vx, Vy, Vt
+  real(dp), dimension(:),   allocatable :: phi, nodal_phi
 
 continue
 
@@ -39,8 +36,8 @@ continue
   else if (read_tec_restart) then
     call read_tec_volume(restart_file,grid,phi,ndof)
   else
-    !phi = 0._dp
-    phi = init_freestream(ndof,grid,uinf,vinf)
+    phi = 0._dp
+    !phi = init_freestream(ndof,grid,uinf,vinf)
     !do i = 1, ndof
     !  phi = real(i,dp)
     !end do
