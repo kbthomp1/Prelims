@@ -5,12 +5,13 @@ program main
   use solver,        only : iterate, get_soln, init_freestream
   use io_helpers,    only : write_tec_volume, write_tec_surface, read_namelist,&
                             read_tec_volume, read_rest=> read_restart
-  use namelist_data, only : gridfile, nnode, tec_dataname, uinf, vinf,  &
-                            read_restart, restart_file, read_tec_restart
+  use namelist_data, only : gridfile, nnode, tec_dataname, uinf, vinf,         &
+                            read_restart, restart_file, read_tec_restart,      &
+                            initialize_freestream
 
   implicit none
   
-  integer        :: ndof, i
+  integer        :: ndof
   type(gridtype) :: grid
   real(dp), dimension(:),   allocatable :: Vx, Vy, Vt
   real(dp), dimension(:),   allocatable :: phi, nodal_phi
@@ -35,12 +36,11 @@ continue
     call read_rest(phi,ndof)
   else if (read_tec_restart) then
     call read_tec_volume(restart_file,grid,phi,ndof)
+  else if (initialize_freestream) then
+    ! Note: this has been found to slow convergence
+    phi = init_freestream(ndof,grid,uinf,vinf)
   else
     phi = 0._dp
-    !phi = init_freestream(ndof,grid,uinf,vinf)
-    !do i = 1, ndof
-    !  phi = real(i,dp)
-    !end do
   end if
 
   call iterate(phi,grid,ndof)

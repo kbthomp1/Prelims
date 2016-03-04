@@ -66,7 +66,6 @@ contains
       u2_r = phi(get_global_dof(fp2,jcell,grid))
 
       jump = (u1_r + u2_r - u1_l - u2_l)*(nx+ny)
-      !write(*,*) "CHECK: u",u1_l,u2_l, u1_r, u2_r
 
       lift(i) = -eta*my_8th*jump
 
@@ -174,9 +173,6 @@ contains
     ! integrated local lifting operator from cell face
     flux = flux - lift(k)*half*(nx+ny)*face_area
 
-    !write(*,*) "CHECK: face:",iface, icell,jcell
-    !write(*,*) "CHECK: flux = ",flux
-
     loop_face_nodes: do i = 3,4
       inode = grid%intfac(i,iface)
       idof = get_global_dof(inode,icell,grid)
@@ -212,8 +208,6 @@ contains
 
         call get_face_normal(nx,ny,face_area,grid,iface)
         flux = 0.5_dp*(uinf*nx + vinf*ny)*face_area
-        !write(*,*) "CHECK: face: ",iface, icell
-        !write(*,*) "CHECK: bc flux = ",flux
     
         residual(ip1) = residual(ip1) - flux
         residual(ip2) = residual(ip2) - flux

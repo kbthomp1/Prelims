@@ -68,17 +68,15 @@ contains
                               tec_output_freq, write_restart_freq,             &
                               relative_tol, absolute_tol
     use io_helpers,    only : write_tec_volume, write_restart
-    use flux_functions, only : compute_local_lift
 
     type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
     real(dp), dimension(ndof), intent(inout) :: phi
     real(dp), dimension(ndof)        :: residual, dt
     real(dp), dimension(grid%npoin)  :: nodal_phi, Vx, Vy, Vt
-    real(dp), dimension(grid%numfac) :: lift
 
     real(dp) :: L2_error, rel_res, res0
-    integer  :: timestep, counter, i
+    integer  :: timestep, counter
     integer  :: tec_counter, rest_counter
 
     character(len=100) :: time_string
@@ -151,14 +149,9 @@ contains
 
     end do
 
-    call compute_local_lift(phi,lift,grid,ndof)
-    L2_error = zero
-    do i = 1, grid%numfac
-      L2_error = L2_error + lift(i)**2
-    end do
-    write(*,*) "CHECK: lift error = ",sqrt(L2_error)
 10 format(A,x,g10.3,x,A,x,i5)
 11 format(i10,2(x,e11.4))
+
   end subroutine
 
 !============================ RK_INTEGRATE ==================================80

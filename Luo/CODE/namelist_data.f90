@@ -15,7 +15,7 @@ module namelist_data
   public :: gridfile, tec_dataname, lin_solver
   public :: restart_file, read_restart, output_freq
   public :: read_tec_restart, tec_output_freq
-  public :: write_restart_freq
+  public :: write_restart_freq, initialize_freestream
 
   real(dp) :: uinf
   real(dp) :: vinf
@@ -39,5 +39,6 @@ module namelist_data
 
   logical :: read_restart
   logical :: read_tec_restart
+  logical :: initialize_freestream
 
 end module namelist_data

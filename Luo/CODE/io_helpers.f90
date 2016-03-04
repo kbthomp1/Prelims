@@ -25,13 +25,14 @@ contains
                               tec_dataname, lin_solver, tolerance, dt,         &
                               read_restart, restart_file, rk_order, cfl,       &
                               output_freq, read_tec_restart, tec_output_freq,  &
-                              write_restart_freq, relative_tol, absolute_tol
+                              write_restart_freq, relative_tol, absolute_tol,  &
+                              initialize_freestream
 
     namelist /fe_input/ gridfile, nnode, uinf, vinf, nsteps, tec_dataname,     &
                         lin_solver, tolerance, dt, read_restart, restart_file, &
                         cfl, rk_order, output_freq, read_tec_restart,          &
                         tec_output_freq, write_restart_freq, relative_tol,     &
-                        absolute_tol
+                        absolute_tol, initialize_freestream
 
   continue
 
@@ -91,6 +92,9 @@ contains
 
     !Output tecplot file frequency
     tec_output_freq = 0
+
+    !Flag to initialize the flow with freestream velocity
+    initialize_freestream = .false.
 
     open(11,file="fe_input.nml",status="old")
     read(11,nml=fe_input)

@@ -1,6 +1,6 @@
 #Fortran Compiler
-#FC = ifort
-FC = gfortran
+FC = ifort
+#FC = gfortran
 
 #Compiler Options
 #FCFLAGS = -O0 -traceback -g -check -warn
