@@ -65,6 +65,7 @@ contains
 
     use namelist_data, only : uinf, vinf, nsteps, cfl, rk_order, output_freq
     use io_helpers,    only : write_tec_volume
+    use flux_functions, only : compute_local_lift
 
     type(gridtype),            intent(in)    :: grid
     integer,                   intent(in)    :: ndof
@@ -72,9 +73,10 @@ contains
     real(dp), dimension(ndof), intent(inout) :: phi
     real(dp), dimension(ndof)       :: residual, dt
     real(dp), dimension(grid%npoin) :: nodal_phi, Vx, Vy, Vt
+    real(dp), dimension(2,grid%numfac) :: lift
 
     real(dp) :: L2_error, rel_res, res0
-    integer  :: timestep, counter
+    integer  :: timestep, counter, i
 
     character(len=100) :: time_string
 
@@ -112,6 +114,12 @@ contains
         exit
       end if
 
+    end do
+
+    call compute_local_lift(phi,lift,grid,ndof)
+    do i = 1, grid%numfac
+      write(*,*) "CHECK: i lift = ",lift(1,i)
+      write(*,*) "CHECK: j lift = ",lift(2,i)
     end do
 10 format(A,x,g10.3,x,A,x,i5)
 11 format(i10,2(x,e11.4))

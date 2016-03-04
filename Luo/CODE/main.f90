@@ -39,11 +39,11 @@ continue
   if (read_restart) then
     call read_tec_volume(restart_file,grid,phi,ndof)
   else
-    !phi = 0._dp
+    phi = 0._dp
     !phi = init_freestream(ndof,grid,uinf,vinf)
-    do i = 1, ndof
-      phi = real(i,dp)
-    end do
+    !do i = 1, ndof
+    !  phi = real(i,dp)
+    !end do
   end if
 
   call iterate(phi,grid,ndof,tolerance)
