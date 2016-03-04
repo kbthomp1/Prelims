@@ -921,14 +921,22 @@ $!GLOBALRGB
   RANGEMAX = 1
 $!GLOBALCONTOUR  1
   VAR = 6
-  DEFNUMLEVELS = 7
+  DEFNUMLEVELS = 6
   LEGEND
     {
     SHOW = YES
     XYPOS
       {
-      X = 79.582
-      Y = 68.762
+      X = 86.573
+      Y = 87.284
+      }
+    HEADERTEXTSHAPE
+      {
+      HEIGHT = 4.5
+      }
+    NUMBERTEXTSHAPE
+      {
+      HEIGHT = 4.5
       }
     BOX
       {
