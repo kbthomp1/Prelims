@@ -205,7 +205,7 @@ and no flux is permitted through the channel walls.
 \begin{figure}[h]
   \centering
   \includegraphics[width=\textwidth,trim={0 4cm 0 4cm},clip]{figures/boundary_conditions}
-  \caption{Channel Mesh and Boundary Conditions}
+  \caption{Channel mesh and boundary conditions}
   \label{fig:boundary-conditions}
 \end{figure}
 The solution initial state was set as zero throughout the domain and evolved to
@@ -217,15 +217,15 @@ absolute magnitude of the L2 norm of the residual was less than $10^{-12}$.
   \centering
   \begin{subfigure}{0.45\textwidth}
     \includegraphics[width=\textwidth]{figures/potential_contour}
-    \caption{Velocity Potential with Streamlines}
+    \caption{Velocity potential with streamlines}
     \label{fig:potential}
   \end{subfigure}
   \begin{subfigure}{0.45\textwidth}
     \includegraphics[width=\textwidth]{figures/Vt_contour}
-    \caption{Total Velocity Contours}
+    \caption{Total velocity contours}
     \label{fig:Vt-contour}
   \end{subfigure}
-  \caption{Channel Contour Plots}
+  \caption{Channel contour plots}
 \end{figure}
 Figure \ref{fig:potential} shows the velocity potential, $\phi$, contours across
 the computational domain.  It is clearly seen that there is a great deal of
@@ -234,19 +234,40 @@ half-plane.  The potential behaves as expected, with the difference between the
 edges of the domain and the centerline being equal in magnitude.  Figure
 \ref{fig:Vt-contour} also supports the prevalence of symmetry, and shows that
 the flow does indeed accelerate as it passes over the spherical bump, as
-expected by the venturi effect.  Figure \ref{fig:surface-velocity} breaks the
-symmetry seen in the contour plots, as the velocity and start and end on the
-bump are of equal magnitude.  Since this is potential flow over a supposedly
-symmetric problem, this is unexpected, but also seen and documented by the
-CG(P1) solver.  
+expected by the venturi effect.    
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/surface_velocity}
-  \caption{Channel Upper and Lower Surface Velocity}
+  \caption{Channel upper and lower surface selocity}
   \label{fig:surface-velocity}
 \end{figure}
-Upon examining the mesh over the lower surface, it is seen that
-the domain is not perfectly symmetric. Figure 
-  %\frac{\phi_{i}^{(n+1)}}{\Delta t}
+Figure \ref{fig:surface-velocity} breaks the
+symmetry seen in the contour plots, as the velocity and start and end on the
+bump are of equal magnitude.  Since this is potential flow over a supposedly
+symmetric problem, this is unexpected, but also seen and documented by the
+CG(P1) solver. Upon examining the mesh over the lower surface, it is seen that
+the domain is not perfectly symmetric, and figure \ref{fig:lower-surface} shows
+the point coordinates for highest point on the spherical bump are slightly off
+of the half-plane. This could explain the lack of symmetry in the surface
+velocity.  Another possibility is that the area-weighted averaging done to map
+the solution degrees off freedom to the mesh nodes has introduced error.  A grid
+refinement study and use of another averaging technique would help to better
+determine what is causing the asymmetry.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/lower_surface}
+  \caption{Channel lower surface point coordinates}
+  \label{fig:lower-surface}
+\end{figure}
+
+\section{Conclusion}
+The BR2 scheme provides a compact scheme that addresses the inconsistency and
+stability issues associated with using DG method to solve elliptic problems.  By
+integrating explicitly in pseudo-time the solution was evolved to a steady state
+that satisfies the Laplace equation and gives a solution that is $C_1$ and $C_0$
+continuous.  The results from the channel with a spherical bump verify that the
+method is able to give results consistent with expectations, with the exception
+of the minor asymmetry in the surface velocity, which may require further
+analysis.
 
 \end{document}
