@@ -241,9 +241,13 @@ contains
   subroutine read_restart(phi,ndof)
     integer,                   intent(in)  :: ndof
     real(dp), dimension(ndof), intent(out) :: phi
-    integer :: i
+    integer :: i, ierr
   continue
-    open(52,file="flow.restart", status="old")
+    open(52,file="flow.restart", status="old",iostat=ierr)
+    if(ierr /= 0) then
+      write(*,*) "Error: specified to restart, but flow.restart not found!"
+      stop
+    end if
     do i = 1, ndof
       read(52,*) phi(i)
     end do
