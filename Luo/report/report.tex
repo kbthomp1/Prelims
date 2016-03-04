@@ -32,8 +32,6 @@
 \newcommand{\mm}{\mathbf{M}}
 \newcommand{\vr}{\mathbf{r}}
 
-%\newcommand{\d}{\partial}
-
 \title{MAE 766 Written Preliminary Exam \#1}
 
 \author{ Kyle B. Thompson }
@@ -120,7 +118,7 @@ By introducing the ``lift operator'' concept and recasting
 \eref{first-order-sys} in integral form, it is possible to arrive at the
 ``primal formulation'' that solves the system in a single equation as a function
 of the solution basis weights and the lifting operators.  The first Bassi and
-Rebay scheme (BR1) defined a ``global lifting operator'', $\glift$, as
+Rebay scheme\cite{BR1} (BR1) defined a ``global lifting operator'', $\glift$, as
 \begin{equation}
   \dint{\glift \cdot \vbasis} + \sum_{j=1}^3\sint{\frac{1}{2} \jump{\phi}
   \vbasis \cdot \unitn} = 0
@@ -140,7 +138,7 @@ lifting operator'', $\llift$, defined at each element interface by
   \label{local-lift-def}
 \end{equation}
 Where $\eta$ is a stability parameter and $\jump{\cdot}$ is a jump operator.  It
-has been proven that $\eta \geq N_{edges}$ results in a stable scheme.
+has been proven\cite{hartmann} that $\eta \geq N_{faces}$ results in a stable scheme.
 Additionally, since $\vbasis$ is an arbitrary basis, the global lifting operator
 can be related to the local lifting operators by summing the local lift
 contributions
@@ -166,10 +164,10 @@ number of unknowns going from CG(P1) to DG(P1) increases from the number of
 points in the mesh to the number of elements times each elements' vertices.
 Additionally, if the system is to be solved implicitly, each local lifting
 operator $\llift$ must be solved for as well, increasing the total number of
-equations to $3(N_{elem})+N_{faces}$ at a minimum for a triangular mesh.  This
-drastically increases the problem size and complexity for an implicit solver,
-since a sparsity pattern must be exploited to formulate an efficient linear
-solver.
+equations to three times the number of element plus the number of interior
+faces, at a minimum, for a triangular mesh.  This drastically increases the
+problem size and complexity for an implicit solver, since a sparsity pattern
+must be exploited to formulate an efficient linear solver.
 
 An alternative to solving the system implicitly is to explicitly evolve the
 solution in pseudo-time to steady state.  Adding a time derivative to
@@ -188,7 +186,7 @@ contracted to
 \end{equation}
 where $\vr$ is the residual vector and $\mm$ is the block diagonal mass matrix.
 If the boundaries are not time-dependent, then we recover the solution to the
-Laplace equation upon convergence, since $\vr= 0$.  The mass matrix components can be
+Laplace equation upon convergence when $\vr= 0$.  The mass matrix components can be
 easily computed using \erefs{dom-integral-def}{edge-integral-def}, and the
 system can be inverted by hand to significantly save computational time. The time
 integration is done via Runge-Kutta and the time step can be computed locally or
@@ -245,7 +243,7 @@ expected by the venturi effect.
 Figure \ref{fig:surface-velocity} breaks the
 symmetry seen in the contour plots, as the velocity and start and end on the
 bump are of equal magnitude.  Since this is potential flow over a supposedly
-symmetric problem, this is unexpected, but also seen and documented by the
+symmetric problem, this is unexpected but also seen and documented by the
 CG(P1) solver. Upon examining the mesh over the lower surface, it is seen that
 the domain is not perfectly symmetric, and figure \ref{fig:lower-surface} shows
 the point coordinates for highest point on the spherical bump are slightly off
