@@ -8,7 +8,6 @@ module solver
 
   public :: get_residual
   public :: get_soln
-  public :: solve
   public :: iterate
   public :: init_freestream
 
