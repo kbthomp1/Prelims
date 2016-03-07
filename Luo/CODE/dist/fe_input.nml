@@ -1,0 +1,21 @@
+&fe_input
+  gridfile = "channel.grid"
+  nnode    = 3  !number of vertices per element (triangles, quads, etc.)
+  uinf     = 1.0
+  vinf     = 0.0
+
+  cfl = 5e-2
+
+  rk_order = 3
+
+  nsteps       = -1            ! Number of timesteps to run.  Setting to < 0 will run until tolerance met
+  absolute_tol = 1.E-12
+
+  output_freq = 500            ! Controls how often to write error norm to screen
+
+  read_restart = .false.       ! Read restart from flow.restart?
+  write_restart_freq = 500     ! How often should a flow.restart be written
+
+  tec_dataname = "output.dat"  !This is the output tecplot filename for the volume solution
+/
+
