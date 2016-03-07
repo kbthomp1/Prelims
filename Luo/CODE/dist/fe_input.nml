@@ -4,9 +4,9 @@
   uinf     = 1.0
   vinf     = 0.0
 
-  cfl = 5e-2
+  cfl = 5e-2                   ! Prescribed CFL number
 
-  rk_order = 3
+  rk_order = 3                 ! Order of Runge-Kutta time integration
 
   nsteps       = -1            ! Number of timesteps to run.  Setting to < 0 will run until tolerance met
   absolute_tol = 1.E-12
