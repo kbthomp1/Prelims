@@ -4,6 +4,8 @@
 %
 \documentclass[a4paper]{report}
 
+\usepackage[a4paper, margin=1.25in]{geometry}
+
 \usepackage{mathtools} 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -16,6 +18,8 @@
 
 \newcommand{\eref}[1]{Eq.~(\ref{#1})}
 \newcommand{\erefs}[2]{Eq.s~(\ref{#1}-\ref{#2})}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pnd}[3]{\frac{\partial^{#3} #1}{\partial #2^{#3}}}
 
 \title{Written Preliminary Exam \#1 \break
        Prepared by Dr. Hassan}
@@ -48,6 +52,100 @@
       \label{fig:incompressible}
     \end{figure}
 
+  \item The Pohlhausen method is typically defined as a velocity profile polynomial
+    \begin{equation}
+      \begin{gathered}
+        \frac{u}{U_e} = a + b\eta + c\eta^2 + d\eta^3 + e\eta^4 \\
+        \eta = \left( \frac{y}{\delta} \right)
+      \end{gathered}
+      \label{u-polynomial}
+    \end{equation}
+    where $u$ is the velocity, $U_e$ is the velocity at the edge of the
+    boundary layer, and $\delta$ is the boundary thicknesss.  The polynomial
+    coefficients are defined by the boundary conditions for $u = u(x,y)$, which
+    Pohlhausen specified as
+    \begin{align}
+      u(x,0) &= 0 \\
+      u(x,\delta) &= U_e \\
+      \pd{u}{y}(x,\delta) &= 0 \\
+      \pnd{u}{y}{2}(x,0) &=
+      -\frac{U_e}{\nu}\pd{U_e}{x} \\
+      \pnd{u}{y}{2}(x,\delta) &= 0 \label{bad-bc}
+    \end{align}
+    As discussed in MAE 589, the last boundary condition (\eref{bad-bc}) was a
+    poor choice, because the fact that the first derivative of velocity, $\partial
+    u/\partial y$, is zero at a point does not necessarily mean that the
+    curvature at that point is also zero.  A suggested improvement would be to
+    substitute that boundary condition for
+    \begin{equation}
+      \pnd{u}{y}{3}(x,0) = 0
+      \label{improved-bc}
+    \end{equation}
+    which comes from differentiating the momentum equation
+    \begin{equation}
+      \begin{aligned}
+        \pd{}{y}\left( u \pd{u}{x} + v\pd{u}{y}\right) &= \pd{}{y}\left(
+        -\pd{p}{x} + \nu \pnd{u}{y}{2} \right) \\
+        \pnd{u}{y}{3}(x,0) &= 0
+      \end{aligned}
+      \label{bc-deriv}
+    \end{equation}
+    with this new boundary condition, the polynomial coefficients can be derived
+    as
+    \begin{align}
+      a &= 0 \\
+      b &= \frac{4 + \lambda}{3} \\
+      c &= -\frac{\lambda}{2} \\
+      d &= 0 \\
+      e &= \frac{\lambda - 2}{6}
+      \label{coefs}
+    \end{align}
+    where $\lambda = \frac{\delta^2}{\nu}\pd{U_e}{x}$ is the Pohlhausen pressure
+    gradient parameter.  The separation condition $\tau_w = \mu(\partial
+    u/\partial y)_{y=0} = 0$ is used to determine the value of $\lambda$ at
+    separation
+    \begin{equation}
+      \begin{aligned}
+        \left( \pd{u}{y} \right)_{y=0} = 0 &= \frac{b}{\delta} \\
+        0 &= \frac{4+\lambda}{3\delta} \\
+        \lambda &= -4
+      \end{aligned}
+      \label{new-separation-point}
+    \end{equation}
+    The same procedure can be used with \eref{bad-bc} in place of
+    \eref{improved-bc} to find that the original Pohlhausen method yields
+    $\lambda = -12$ at separation.  The Falkner-Skan equations can be used to
+    verify that \eref{improved-bc} does better at predicting separation for
+    wedge flows, where $U_e = U_1 x^m$.  In the literature it is reported that
+    flow separates at $m = -0.0904$, and
+    \begin{equation}
+      \frac{\delta}{x}\sqrt{Re_x} = 7.1
+      \label{bl-falkner-skan}
+    \end{equation}
+    at separation. This can be rearranged to give the exact value of the
+    Pohlhausen pressure gradient, $\lambda$, at separation
+    \begin{equation}
+      \begin{aligned}
+        \left( \frac{\delta}{x}\sqrt{Re_x}\right)^2 &= \frac{\delta^2}{\nu}\frac{U_e}{x} \\
+        &= \frac{\delta^2}{\nu}\frac{U_e}{x} \\
+        &= \frac{\delta^2}{\nu}\pd{U_e}{x}\frac{1}{m} \\
+        &= \frac{\lambda}{m}
+      \end{aligned}
+      \label{exact-lambda}
+    \end{equation}
+    Thus, the exact value of $\lambda$ at separation is
+    \begin{equation}
+      \begin{aligned}
+        \lambda_{exact} &= m \left(\frac{\delta}{x}\sqrt{Re_x}\right)^2 \\
+        &= (-0.0904)(7.1)^2 \\
+        &= -4.56
+      \end{aligned}
+      \label{exact-lambda-value}
+    \end{equation}
+    It is therefore clear the Pohlhausen method with \eref{improved-bc},
+    yielding $\lambda = -4$ instead of $\lambda = -12$ at separation, is an
+    improvement over using the original boundary condition (\eref{bad-bc}).
+
   \item There are many ways to derive an expression for change in entropy.  From
     a classical thermodynamics perspective, this comes from the definition of
     Gibbs free energy, $G$
@@ -63,7 +161,7 @@
       dS &= \frac{dQ}{T} + dS_{i}= \frac{dH - Vdp}{T} + dS_{i}
       \label{2nd-law}
     \end{align}
-    Where $dS_i$ is entropy generated from ireversible processes. Using the
+    Where $dS_i$ is entropy generated from irreversible processes. Using the
     definition of the enthalpy \begin{equation}
       H = E + pV
       \label{enthalpy-def}
@@ -164,7 +262,7 @@
     respectively.  The production of entropy is to be expected, intuitively,
     since the diffusion of one gas into the other happens spontaneously.  Each
     gas will expand into the new volume available after mixing naturally, and it
-    takes effort to separate them; hence $dS_mix > 0$.  Likewise, if chemical
+    takes effort to separate them; hence $dS_{mix} > 0$.  Likewise, if chemical
     reactions occur, entropy will also be generated as dictated by
     \eref{si-def}.
 
