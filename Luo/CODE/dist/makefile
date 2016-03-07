@@ -4,8 +4,8 @@ FC = gfortran
 
 #Compiler Options
 #FCFLAGS = -O0 -traceback -g -check -warn
-FCFLAGS = -O0 -Wall -g -fbacktrace -fbounds-check
-#FCFLAGS = -O3
+#FCFLAGS = -O0 -Wall -g -fbacktrace -fbounds-check
+FCFLAGS = -O3
 
 PROGRAMS = main
 
@@ -21,7 +21,7 @@ $(PROGRAMS): $(OBJS)
 
 #$(OBJS): $(SRCS)
 
--include $(deps)
+-include .make.deps
 
 %: %.o
 	$(FC) $(FCFLAGS) -o $@ $^ $(LDFLAGS)
@@ -32,19 +32,11 @@ $(PROGRAMS): $(OBJS)
 %.o %.mod: %.F90
 	$(FC) $(FCFLAGS) -c $<
 
-# Auto dependency generation
-
-%.d: %.f90
-	./Depend.pl $< . > $@
-
-%.d: %.F90
-	./Depend.pl $< . > $@
-
 # Utility targets
 .PHONY: clean veryclean
 
 clean:
-	rm -f *.o *.mod *.MOD *.d
+	rm -f *.o *.mod *.MOD
 
 veryclean: clean
 	rm -f *~ $(PROGRAMS)

@@ -1,0 +1,25 @@
+flux_functions.o flux_functions.mod : flux_functions.f90 kinddefs.mod gridtools.mod
+kinddefs.mod :
+gridtools.mod :
+gridtools.o gridtools.mod : gridtools.f90 kinddefs.mod
+kinddefs.mod :
+io_helpers.o io_helpers.mod : io_helpers.f90 flux_functions.mod kinddefs.mod gridtools.mod namelist_data.mod
+flux_functions.mod :
+kinddefs.mod :
+gridtools.mod :
+namelist_data.mod :
+kinddefs.o kinddefs.mod : kinddefs.f90
+main.o : main.f90 solver.mod io_helpers.mod kinddefs.mod gridtools.mod namelist_data.mod
+solver.mod :
+io_helpers.mod :
+kinddefs.mod :
+gridtools.mod :
+namelist_data.mod :
+namelist_data.o namelist_data.mod : namelist_data.f90 kinddefs.mod
+kinddefs.mod :
+solver.o solver.mod : solver.f90 io_helpers.mod flux_functions.mod kinddefs.mod gridtools.mod namelist_data.mod
+io_helpers.mod :
+flux_functions.mod :
+kinddefs.mod :
+gridtools.mod :
+namelist_data.mod :
