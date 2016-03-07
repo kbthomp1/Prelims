@@ -4,6 +4,8 @@
 *.o
 *.mod
 *.d
+*.bbl
+*.blg
 tecplot.phy
 main
 
