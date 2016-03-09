@@ -148,22 +148,40 @@
     improvement over using the original boundary condition (\eref{bad-bc}).
 
   \item There has been significant progress in the recent decades in developing
-    stress models that address second-order closure.  Wilcox ??? gives a good
+    stress models that address second-order closure.  Wilcox\cite{wilcox} gives a good
     description of deficiencies of the Boussinesq approximation, stating that
     models based upon this ``approximation'' (actually assumption is more
     accurate) perform poorly for flows with strong curvature and flows in
-    rotating fluids.  Results from the Wilcox stress-$\omega$ model and the
-    SGS/LRR ??? have been encouraging, however they still lacking when
-    predicting separated flows.  This is likely due to poor progress in the
-    development of a truly physics-based length scale equation.
-    Kantha\cite{Kantha} derives a generalized equation for this, and claims to
-    show that current equations used to model the turbulent dissipation rate,
-    $\varepsilon$, and turbulent frequency, $\omega$, are all subsets of a
-    general form.  Thus, a suggestion to improve current RANS methods is to
-    improve the equation used to determine the length scale and couple it with a
-    Reynolds Stress Model (RSM).  The enstrophy equation in the k-$\zeta$ model
-    developed by Robinson, Alexopoulos, and Hassan\cite{Robinson} has potential,
-    since it is has a stronger physical basis on vorticity fluctuations.
+    rotating fluids.  Results from Reynolds Stress Models (RSM) such as the
+    Wilcox stress-$\omega$ model and the SGS/LRR ??? have been encouraging,
+    however they are still lacking when predicting separated flows.  This is
+    likely due to poor progress in the development of a truly physics-based
+    length scale equation.  Kantha\cite{Kantha} derives a generalized equation
+    for this, and claims to show that current equations used to model the
+    turbulent dissipation rate, $\varepsilon$, and turbulent frequency,
+    $\omega$, are all subsets of a general form.  These equations are strongly
+    based on empirical derivations, not physical ones, and are therefore a
+    considerable hinderance to the success of a second-order closure model.
+    Thus, a suggestion to improve current RANS methods is to improve the
+    equation used to determine the length scale and couple it with a RSM.
+    
+    The enstrophy equation in the k-$\zeta$ model developed by Robinson and
+    Hassan\cite{Robinson} has potential, since it is has a stronger physical
+    basis on vorticity fluctuations.  Unfortunately efforts to recast the
+    k-$\zeta$ model as an RSM led to issues with convergence\cite{Xiao}, and
+    consequently, poor results.  Nonetheless, the analysis by Tennekes and
+    Lumley\cite{lumley} suggests that the energy transfer between large and
+    small turbulent eddies is a vortex stretching process due to nonlinearity,
+    suggesting that enstrophy is a critical component in turbulence.  Morinishi
+    et. al. \cite{morinishi} gives a relationship between the turbulent
+    dissipation, $\varepsilon$, and enstrophy, $\zeta$, and it may be
+    advantageous to replace the $\varepsilon$ equation in the SGS/LRR RSM, or
+    $\omega$ equation in the Wilcox stress-$\omega$ RSM, with the enstrophy
+    equation defined in \cite{Xiao}.  At the very least, this is useful in
+    determining if the convergence issues previously described can be overcome
+    using a different reynolds stress tensor formulation, which does not
+    necessarily contract to turbulent kinetic energy, k, equation presented in
+    \cite{Robinson}.
 
   \item There are many ways to derive an expression for change in entropy.  From
     a classical thermodynamics perspective, this comes from the definition of
