@@ -90,7 +90,7 @@
       \end{aligned}
       \label{bc-deriv}
     \end{equation}
-    with this new boundary condition, the polynomial coefficients can be derived
+    With this new boundary condition, the polynomial coefficients can be derived
     as
     \begin{align}
       a &= 0 \\
@@ -116,7 +116,8 @@
     \eref{improved-bc} to find that the original Pohlhausen method yields
     $\lambda = -12$ at separation.  The Falkner-Skan equations can be used to
     verify that \eref{improved-bc} does better at predicting separation for
-    wedge flows, where $U_e = U_1 x^m$.  In the literature it is reported that
+    wedge flows, where $U_e = U_1 x^m$.  In the literature\cite{Shetz} it is
+    reported that
     flow separates at $m = -0.0904$, and
     \begin{equation}
       \frac{\delta}{x}\sqrt{Re_x} = 7.1
@@ -146,6 +147,24 @@
     yielding $\lambda = -4$ instead of $\lambda = -12$ at separation, is an
     improvement over using the original boundary condition (\eref{bad-bc}).
 
+  \item There has been significant progress in the recent decades in developing
+    stress models that address second-order closure.  Wilcox ??? gives a good
+    description of deficiencies of the Boussinesq approximation, stating that
+    models based upon this ``approximation'' (actually assumption is more
+    accurate) perform poorly for flows with strong curvature and flows in
+    rotating fluids.  Results from the Wilcox stress-$\omega$ model and the
+    SGS/LRR ??? have been encouraging, however they still lacking when
+    predicting separated flows.  This is likely due to poor progress in the
+    development of a truly physics-based length scale equation.
+    Kantha\cite{Kantha} derives a generalized equation for this, and claims to
+    show that current equations used to model the turbulent dissipation rate,
+    $\varepsilon$, and turbulent frequency, $\omega$, are all subsets of a
+    general form.  Thus, a suggestion to improve current RANS methods is to
+    improve the equation used to determine the length scale and couple it with a
+    Reynolds Stress Model (RSM).  The enstrophy equation in the k-$\zeta$ model
+    developed by Robinson, Alexopoulos, and Hassan\cite{Robinson} has potential,
+    since it is has a stronger physical basis on vorticity fluctuations.
+
   \item There are many ways to derive an expression for change in entropy.  From
     a classical thermodynamics perspective, this comes from the definition of
     Gibbs free energy, $G$
@@ -153,7 +172,7 @@
       G = H - TS
       \label{gfe-def}
     \end{equation}
-    Where $H$ is enthalpy, $T$ is temperature, and $S$ is entopy.  It is
+    Where $H$ is enthalpy, $T$ is temperature, and $S$ is entropy.  It is
     straightforward to see that the first and second laws of thermodynamics can
     be used to determine the change of entropy
     \begin{align}
@@ -174,24 +193,25 @@
       \end{aligned}
       \label{s-one-gas}
     \end{equation}
-    While this is useful, this derivation is deficient as it does not account
-    for multiple species in chemical non-equilibrium.  Revisiting Gibbs free
-    energy for multiple species, if a system is considered for each isolated
-    species then
+    While this is useful, this derivation is deficient as it does not directly
+    account for multiple species in chemical non-equilibrium.  Revisiting Gibbs
+    free energy for multiple species, if a system is considered for each
+    isolated species then
     \begin{equation}
       G_s = G_s(p,T,N_s)
       \label{G-species-def}
     \end{equation}
-    and differentiating yields
+    where $G_s$ is the Gibbs free energy of the isolated species $s$, and $N_s$
+    is the number of particles of species $s$. Differentiating
+    \eref{G-species-def} yields
     \begin{equation}
       dG_s = \left( \frac{\partial G_s}{\partial T} \right)_{(p,N_s)} dT
       + \left( \frac{\partial G_s}{\partial p} \right)_{(T,N_s)} dp
       + \left( \frac{\partial G_s}{\partial N_s} \right)_{(p,T)} dN_s
       \label{G-species-diff}
     \end{equation}
-    Where $G_s$ is the Gibbs free energy of the isolated species $s$. Because 
-    $G = \sum\limits_{\substack{s=1}}^{N_{ns}}{G_s}$, \eref{G-species-diff} can
-    be written as
+    Because $G = \sum\limits_{\substack{s=1}}^{N_{ns}}{G_s}$,
+    \eref{G-species-diff} can be written as
     \begin{equation}
       dG = \left( \pd{G}{T} \right)_{(p,N_s)} dT
       + \left( \pd{G}{P} \right)_{(T,N_s)} dp
@@ -217,7 +237,7 @@
     It is clear that in comparing \eref{G-def-diff} and \eref{G-diff} that
     \begin{equation}
       \left( \pd{G}{T} \right)_{(p,N_s)} = -S, \quad
-      \left( \pd{G}{P} \right)_{(T,N_s)} = -V
+      \left( \pd{G}{P} \right)_{(T,N_s)} = V
       \label{G-derivs}
     \end{equation}
     and most importantly
@@ -252,9 +272,10 @@
       \label{s-additive}
     \end{equation}
     where $dS_{mix}$ is the change of entropy in the mixture, and $dS_{(1,2)}$
-    are the changes in entropy of species being mixed.  There is no change in
-    temperature or pressure, so $dE = 0$ for both species; however, the volume
-    has changed, so for intert gases mixing there will be production of entropy
+    are the changes in entropy of species being mixed.  If $E = E(T,p)$ and
+    there is no change in temperature or pressure, $dE = 0$ for both species;
+    however, the volume has changed, so for intert gases mixing there will be
+    production of entropy
     \begin{equation}
       dS_{mix} = \frac{p}{T}\left( dV_1 + dV_2 \right)
       \label{smix-change}
@@ -262,39 +283,25 @@
     Where $dV_1$ and $dV_2$ are the changes in volume for species 1 and 2,
     respectively.  The production of entropy is to be expected, intuitively,
     since the diffusion of one gas into the other happens spontaneously.  Each
-    gas will expand into the new volume available after mixing naturally, and it
-    takes effort to separate them; hence $dS_{mix} > 0$.  Likewise, if chemical
-    reactions occur, entropy will also be generated as dictated by
+    gas will expand into the new volume available after mixing, naturally, and
+    it takes effort to separate them; hence $dS_{mix} > 0$.  Likewise, if
+    chemical reactions occur, entropy will also be generated as dictated by
     \eref{si-def}.
   \item As stated previously, gibbs free energy is defined as
     \begin{equation}
       G = G(T,p,N_1,N_2,\dots,N_{ns}) = H - TS
       \label{gibbs-formal}
     \end{equation}
-    Since $G$ is an extensive property
-    \begin{equation}
-      G(T,p,\lambda N_1, \lambda N_2,\dots, N_{ns}) 
-      = \lambda G(T,p,N_1,N_2,\dots,N_{ns}) 
-      \label{extensive-prop}
-    \end{equation}
-    Thus, by differentiating with respect to the arbitrary constant $\lambda$
-    \begin{equation}
-      \begin{aligned}
-        \pd{G}{\lambda} = G &= \pd{G}{N_1}N_1 + \pd{G}{N_2} + \dots +
-        \pd{G}{N_{ns}}N_{ns} \\ G &= \sum\limits_{s=1}^{N_{ns}}{\mu_s N_s}
-      \end{aligned}
-      \label{gibbs-alt-def}
-    \end{equation}
-    where $\mu_s$ is the previously defined chemical potential of species $s$.
     Using the definition of $G$ in \eref{gibbs-formal}, it was previously shown that
     \begin{equation}
       \boxed{ S = -\left( \pd{G}{T} \right)_{(p,N_s)}}
       \label{S-def}
     \end{equation}
-    Where $G$, $S$, and $V$, are defined as quantities per mole of the mixture.
-    Likewise, enthalpy, $H$, and specific heat at constant pressure, $C_p$, per
-    mole of mixture can be determined from \eref{gibbs-formal} and
-    \eref{S-def} as
+    Where $G$ and $S$ are defined as Gibbs free energy and entropy per mole of
+    the mixture, respectively, and $N_s$ is the number of particles of species
+    $i$ per mole of the mixture.  Likewise, enthalpy, $H$, and specific heat at
+    constant pressure, $C_p$, per mole of mixture can be determined from
+    \erefs{gibbs-formal}{S-def} as
     \begin{gather}
       \boxed{H = G - T\left( \pd{G}{T} \right)_{(p,N_s)}} \label{h-def} \\
       \boxed{C_p = \left(\pd{H}{T}\right)_{(p,N_s)} 
@@ -302,7 +309,7 @@
       - T\left( \pnd{G}{T}{2} \right)_{(p,N_s)}}
       \label{cp-def} \end{gather}
     These thermodynamic quantities can also be found for each species (per mole
-    of species) by substituting $G_s$ in place of $G$, where $G_s$ is the gibbs
+    of species) by substituting $G_s$ in place of $G$, where $G_s$ is the Gibbs
     free energy of species $s$.  Thus, if the variables $T$, $p$, $N_1$, \dots,
     $N_{ns}$ are known, Gibbs free energy can be used to derive all the
     thermodynamic quantities needed for a reacting gas solver.  Likewise, if the
@@ -314,9 +321,9 @@
     One other useful quantity that the Gibbs free energy provides is the
     reaction equilibrium constant in partial pressures, $K_p$
     \begin{gather}
-      \boxed{K_p = \prod_{i=1}^{N_{ns}}{p_i^{(\nu_i^{''}-\nu_i^{'})}}
+      \boxed{K_p = \prod_{i=1}^{ns}{p_i^{(\nu_i^{''}-\nu_i^{'})}}
       = e^{-\Delta G /RT}} \label{kp-def} \\
-      \boxed{\Delta G = \sum\limits_{i=1}^{N_{ns}}{\left(\nu_{i}^{''} -
+      \boxed{\Delta G = \sum\limits_{i=1}^{ns}{\left(\nu_{i}^{''} -
       \nu_{i}^{'}\right) G_i}} \label{del-g-def}
     \end{gather}
     where $\nu_i^{''}$ is the stoichiometric coefficient of the product species
@@ -327,8 +334,8 @@
     \begin{equation}
       \begin{gathered}
         K_c = \left( \frac{101325}{RT} \right)^{(m^{''}-m^{'})} K_p \\
-        m^{''} = \sum\limits_{i=1}^{N_{ns}}{\nu_i^{''}}, \quad
-        m^{'} = \sum\limits_{i=1}^{N_{ns}}{\nu_i^{'}}
+        m^{''} = \sum\limits_{i=1}^{ns}{\nu_i^{''}}, \quad
+        m^{'} = \sum\limits_{i=1}^{ns}{\nu_i^{'}}
       \end{gathered}
       \label{kc-def}
     \end{equation}
