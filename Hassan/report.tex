@@ -34,16 +34,16 @@
     Constant density implies that a fluid(s) density is constant, but capable of
     changing (through compression or expansion), whereas incompressible implies
     the fluid(s) density is incapable of changing but that the density in the
-    flow is not constant.  A good example from the MAE 550 course to distinguish
-    the two is stagnant air in a room, versus an oil/water mixture.  Stagnant
-    air in a room is at constant density, but is certainly capable of both
-    compression or expansion; therefore, it is a constant density flow, but not
-    incompressible.  An oil/water mixture is not constant density.  As
-    illustrated in figure \ref{fig:incompressible},the
-    water and oil are different fluids with different densities, but the fluids
-    are incompressible because both the water and oil are not capable of
-    compression or expansion (at least in a practical sense); therefore, it is
-    not a constant density flow, but it is incompressible.
+    flow is not necessarily constant.  A good example from the MAE 550 course to
+    distinguish the two is stagnant air in a room, versus an oil/water mixture.
+    Stagnant air in a room is at constant density, but is certainly capable of
+    both compression or expansion; therefore, it is a constant density flow, but
+    not incompressible.  An oil/water mixture is not constant density.  As
+    illustrated in figure \ref{fig:incompressible},the water and oil are
+    different fluids with different densities, but the fluids are incompressible
+    because both the water and oil are not capable of compression or expansion
+    (at least in a practical sense); therefore, it is not a constant density
+    flow, but it is incompressible.
 
     \begin{figure}[h]
       \centering
@@ -124,7 +124,7 @@
       \label{bl-falkner-skan}
     \end{equation}
     at separation. This can be rearranged to give the exact value of the
-    Pohlhausen pressure gradient, $\lambda$, at separation
+    Pohlhausen pressure gradient parameter, $\lambda$, at separation
     \begin{equation}
       \begin{aligned}
         \left( \frac{\delta}{x}\sqrt{Re_x}\right)^2 &= \frac{\delta^2}{\nu}\frac{U_e}{x} \\
@@ -148,21 +148,24 @@
     improvement over using the original boundary condition (\eref{bad-bc}).
 
   \item There has been significant progress in the recent decades in developing
-    stress models that address second-order closure.  Wilcox\cite{wilcox} gives a good
+    stress models that address second-order closure, where the unique terms in
+    the reynolds stress tensor are modeled individually and the Boussinesq
+    approximation is not used .  Wilcox\cite{wilcox} gives a good
     description of deficiencies of the Boussinesq approximation, stating that
     models based upon this ``approximation'' (actually assumption is more
     accurate) perform poorly for flows with strong curvature and flows in
-    rotating fluids.  Results from Reynolds Stress Models (RSM) such as the
-    Wilcox stress-$\omega$ model and the SGS/LRR ??? have been encouraging,
-    however they are still lacking when predicting separated flows.  This is
-    likely due to poor progress in the development of a truly physics-based
-    length scale equation.  Kantha\cite{Kantha} derives a generalized equation
-    for this, and claims to show that current equations used to model the
-    turbulent dissipation rate, $\varepsilon$, and turbulent frequency,
-    $\omega$, are all subsets of a general form.  These equations are strongly
-    based on empirical derivations, not physical ones, and are therefore a
-    considerable hinderance to the success of a second-order closure model.
-    Thus, a suggestion to improve current RANS methods is to improve the
+    rotating fluids.  Consequently, results from Reynolds Stress Models (RSM)
+    such as the Wilcox stress-$\omega$ model\cite{wilcox} and the
+    SSG/LRR-$\omega$\cite{Cecora} have been somewhat encouraging, however they
+    are still lacking when predicting separated flows.  This is likely due to
+    poor progress in the development of a truly physics-based length scale
+    equation.  Kantha\cite{Kantha} derives a generalized equation for this, and
+    claims to show that current equations used to model the turbulent
+    dissipation rate, $\varepsilon$, and turbulent frequency, $\omega$, are all
+    subsets of a general form.  These equations are strongly based on empirical
+    derivations, not physical ones, and are therefore a considerable hinderance
+    to the success of a second-order closure model when applied to complex
+    flows.  Thus, a suggestion to improve current RANS methods is to improve the
     equation used to determine the length scale and couple it with a RSM.
     
     The enstrophy equation in the k-$\zeta$ model developed by Robinson and
@@ -174,14 +177,13 @@
     small turbulent eddies is a vortex stretching process due to nonlinearity,
     suggesting that enstrophy is a critical component in turbulence.  Morinishi
     et. al. \cite{morinishi} gives a relationship between the turbulent
-    dissipation, $\varepsilon$, and enstrophy, $\zeta$, and it may be
-    advantageous to replace the $\varepsilon$ equation in the SGS/LRR RSM, or
-    $\omega$ equation in the Wilcox stress-$\omega$ RSM, with the enstrophy
-    equation defined in \cite{Xiao}.  At the very least, this is useful in
-    determining if the convergence issues previously described can be overcome
-    using a different reynolds stress tensor formulation, which does not
-    necessarily contract to turbulent kinetic energy, k, equation presented in
-    \cite{Robinson}.
+    dissipation, $\varepsilon$, and enstrophy, $\zeta$, thus it may be
+    advantageous to replace the $\omega$ equation in the SSG/LRR-$\omega$ RSM or
+    Wilcox stress-$\omega$ RSM, with the enstrophy equation defined in
+    \cite{Xiao}.  At the very least, this is useful in determining if the
+    convergence issues previously described can be overcome using a different
+    reynolds stress tensor formulation, which does not necessarily contract to
+    turbulent kinetic energy, k, equation presented in \cite{Robinson}.
 
   \item There are many ways to derive an expression for change in entropy.  From
     a classical thermodynamics perspective, this comes from the definition of
@@ -292,19 +294,102 @@
     where $dS_{mix}$ is the change of entropy in the mixture, and $dS_{(1,2)}$
     are the changes in entropy of species being mixed.  If $E = E(T,p)$ and
     there is no change in temperature or pressure, $dE = 0$ for both species;
-    however, the volume has changed, so for intert gases mixing there will be
-    production of entropy
+    however, the volume has changed.  For two intert gases mixing there will be
+    production of entropy, since
     \begin{equation}
       dS_{mix} = \frac{p}{T}\left( dV_1 + dV_2 \right)
       \label{smix-change}
     \end{equation}
     Where $dV_1$ and $dV_2$ are the changes in volume for species 1 and 2,
-    respectively.  The production of entropy is to be expected, intuitively,
+    respectively.  Using the ideal gas law for the individual intert gases
+    \begin{equation}
+      p = \frac{nRT}{V}
+      \label{ideal-gas}
+    \end{equation}
+    where $R$ is the universal gas constant and $n$ is the number of moles of
+    the gas, \eref{smix-change} can be integrated to give the change in entropy
+    when the gases are combined
+    \begin{equation}
+      \boxed{\begin{aligned}
+        \Delta S_{mix} &= \int_{V_1}^{V_1+V_2}\frac{n_1 R}{V}dV
+        + \int_{V_2}^{V_1+V_2}\frac{n_2 R}{V}dV \\
+        \Delta S_{mix} &= R\left( n_1 \ln\left( \frac{V_1 + V_2}{V_1} \right) + n_2
+        \ln\left( \frac{V_1 + V_2}{V_2} \right) \right)
+      \end{aligned}}
+      \label{delta-change-smix}
+    \end{equation}
+    The production of entropy is to be expected, intuitively,
     since the diffusion of one gas into the other happens spontaneously.  Each
     gas will expand into the new volume available after mixing, naturally, and
     it takes effort to separate them; hence $dS_{mix} > 0$.  Likewise, if
     chemical reactions occur, entropy will also be generated as dictated by
     \eref{si-def}.
+
+    It should be noted that \eref{delta-change-smix} can also be derived from
+    statistical mechanics.  Beginning with the Boltzmann relation
+    \begin{equation}
+      S = k\ln(\Omega)
+      \label{boltzmann-relation}
+    \end{equation}
+    where $k$ is the boltzmann constant and $\Omega$ is the ``thermodynamic
+    probability''.  In the boltzmann limit, which is the macro state containing
+    the maximum number of microstates,
+    \begin{equation}
+      \ln(\Omega) = N\left( \ln \frac{\sum\limits_{j}{C_j e^{-\beta\varepsilon_j}}}{N}
+      + 1\right) + \beta E
+      \label{boltz-limit}
+    \end{equation}
+    where $C_j$ is a microstate container, $\varepsilon_j$ is a microstate
+    energy, and $\beta$ is an undetermined multiplier.  Substituting
+    \eref{boltz-limit} into \eref{boltzmann-relation}
+    \begin{equation}
+      S = Nk\left( \ln \frac{\sum\limits_{j}{C_j e^{-\beta\varepsilon_j}}}{N}
+      + 1\right) + \beta E
+      \label{s-stat-beta}
+    \end{equation}
+    Using \eref{s-one-gas} to solve for $\beta$, \eref{s-stat-beta} can be
+    rewritten in terms of the the partition function, $Q$, as
+    \begin{align}
+      S &= Nk\left( \ln\frac{Q}{N} + 1 \right) + \frac{E}{T} \\
+      Q &= \sum\limits_{j}{C_j e^{-\varepsilon_j/kT}}
+      \label{S-Q}
+    \end{align}
+    Because the partition functions is the product of all the energy modes
+    \begin{equation}
+      Q = Q_{trans}Q_{rot}Q_{vib}Q_{elec}
+      \label{Q-def}
+    \end{equation}
+    and the only volume dependence that $Q$ has is in the translational mode
+    \begin{align}
+      Q_{trans} &= VQ^{'}(T) \label{q-trans} \\
+      Q &= VQ^{'}(T) \label{q-t}
+    \end{align}
+    where $Q^{'}(T)$ is used to denote a partition function's temperature
+    dependence.  Substituting \eref{q-t} into \eref{S-Q} gives a relation for
+    entropy with a clear dependence on $T$ and $V$
+    \begin{equation}
+      S = Nk\left( \ln\frac{V Q^{'}(T)}{N} + 1 \right) + \frac{E}{T}
+      \label{S-Q'}
+    \end{equation}
+    Since the entropy change of the mixture is the sum of the individual gases'
+    entropy changes, and there is no change in temperature or pressure when
+    mixing occurs
+    \begin{equation}
+      \begin{aligned}
+        \Delta S_{mix} &= 
+        N_1 k\left( \ln \frac{(V_1+V_2)Q^{'}T}{N_1} - \ln
+        \frac{V_1 Q^{'}T}{N_1} \right) \\
+        &+ N_2 k\left( \ln \frac{(V_1+V_2)Q^{'}T}{N_2} - \ln
+        \frac{V_2 Q^{'}T}{N_2} \right) \\
+        \Delta S_{mix} &= 
+        N_1 k\left( \ln \frac{(V_1+V_2)}{V_1} \right)
+        + N_1 k\left( \ln \frac{(V_1+V_2)}{V_2} \right)
+      \end{aligned}
+      \label{S-stat-final}
+    \end{equation}
+    Since $R=N_A k$, where $N_A$ is avogadro's number and $n = N/N_A$,
+    \eref{S-stat-final} is equivilent to \eref{delta-change-smix}.
+
   \item As stated previously, gibbs free energy is defined as
     \begin{equation}
       G = G(T,p,N_1,N_2,\dots,N_{ns}) = H - TS
@@ -327,44 +412,54 @@
       - T\left( \pnd{G}{T}{2} \right)_{(p,N_s)}}
       \label{cp-def} \end{gather}
     These thermodynamic quantities can also be found for each species (per mole
-    of species) by substituting $G_s$ in place of $G$, where $G_s$ is the Gibbs
-    free energy of species $s$.  Thus, if the variables $T$, $p$, $N_1$, \dots,
-    $N_{ns}$ are known, Gibbs free energy can be used to derive all the
-    thermodynamic quantities needed for a reacting gas solver.  Likewise, if the
-    mixture composition is not know, and needs to be determined at chemical
-    equilibrium for a given $p$ and $T$, this can be done by free energy
-    minimization.  Gordon and McBride\cite{mcbride} explain this in detail, and
-    have developed a chemical equilibrium solver based on this principle.
+    of mixture) by substituting $G_s$ in place of $G$, where $G_s$ is the Gibbs
+    free energy of species $s$ per mole of the mixture, and
+    \begin{equation}
+      G = \sum\limits_{s=1}^{ns}{\chi_s G_s}
+      \label{gs-sum}
+    \end{equation}
+    where $\chi_s$ is the mole fraction of species $s$.  Thus, if the variables
+    $T$, $p$, $N_1$, \dots, $N_{ns}$ are known, Gibbs free energy can be used to
+    derive all the thermodynamic quantities needed for a reacting gas solver.
+    Likewise, if the mixture composition is not know, and needs to be determined
+    at chemical equilibrium for a given $p$ and $T$, this can be done by free
+    energy minimization.  Gordon and McBride\cite{mcbride} explain this in
+    detail, and have developed a chemical equilibrium solver based on this
+    principle.
     
     One other useful quantity that the Gibbs free energy provides is the
-    reaction equilibrium constant in partial pressures, $K_p$
+    reaction equilibrium constant in partial pressures, $K_p$ 
     \begin{gather}
-      \boxed{K_p = \prod_{i=1}^{ns}{p_i^{(\nu_i^{''}-\nu_i^{'})}}
-      = e^{-\Delta G /RT}} \label{kp-def} \\
-      \boxed{\Delta G = \sum\limits_{i=1}^{ns}{\left(\nu_{i}^{''} -
-      \nu_{i}^{'}\right) G_i}} \label{del-g-def}
+      \boxed{K_p = 
+        \prod_{i=1}^{ns}{p_i^{(\nu_i^{''}-\nu_i^{'})}} 
+        = e^{-\Delta G /RT}} \label{kp-def} \\ 
+      \boxed{\Delta G =
+        \sum\limits_{i=1}^{ns}{\left(\nu_{i}^{''} - \nu_{i}^{'}\right) G_i}}
+        \label{del-g-def} 
     \end{gather}
-    where $\nu_i^{''}$ is the stoichiometric coefficient of the product species
-    $i$, $\nu_i^{'}$ is the stoichiometric coefficient of the reactant species
-    $i$, and $R$ is the universal gas constant.  Converting this to the more
-    useful reaction equilibrium constant in concentrations, $K_c$, assuming the
-    partial pressure is in units atm
-    \begin{equation}
-      \begin{gathered}
-        K_c = \left( \frac{101325}{RT} \right)^{(m^{''}-m^{'})} K_p \\
-        m^{''} = \sum\limits_{i=1}^{ns}{\nu_i^{''}}, \quad
-        m^{'} = \sum\limits_{i=1}^{ns}{\nu_i^{'}}
-      \end{gathered}
+    where $\nu_i^{''}$ is the stoichiometric
+    coefficient of the product species $i$, $\nu_i^{'}$ is the stoichiometric
+    coefficient of the reactant species $i$, and $R$ is the universal gas
+    constant.  Converting this to the more useful reaction equilibrium
+    constant in concentrations, $K_c$, assuming the partial pressure is in
+    units atm 
+    \begin{equation} 
+      \begin{gathered} 
+        K_c = \left( \frac{101325}{RT}
+        \right)^{(m^{''}-m^{'})} K_p \\
+        m^{''} = 
+        \sum\limits_{i=1}^{ns}{\nu_i^{''}}, \quad m^{'} =
+        \sum\limits_{i=1}^{ns}{\nu_i^{'}} 
+      \end{gathered} 
       \label{kc-def}
     \end{equation}
-    This is a more useful quantity, as it can be used to obtain the backward
-    reaction rate constant, $k_b$, based on the forward reaction rate
-    coefficient,$k_f$, where
-    \begin{equation}
+    This is a more useful quantity, as it can be used to obtain
+    the backward reaction rate constant, $k_b$, based on the forward reaction
+    rate coefficient,$k_f$, where 
+    \begin{equation} 
       k_b = \frac{k_f}{K_c}
-      \label{kb-def}
+      \label{kb-def} 
     \end{equation}
-
 
 \bibliography{hassan-prelim}
 \bibliographystyle{plain}
